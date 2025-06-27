@@ -4,22 +4,35 @@ import plotly.graph_objects as go
 from datetime import datetime
 import requests
 import os
-
+# ملف pages/us_market.py
 # إعدادات الصفحة
 st.set_page_config(page_title="نظرة على السوق الأمريكي", layout="wide")
 st.title("📈 نظرة شاملة على السوق الأمريكي")
 
 # API Key لـ Alpha Vantage (يمكن الحصول على مفتاح مجاني من موقعهم)
-ALPHA_VANTAGE_API_KEY = st.secrets.get("ALPHA_VANTAGE_API_KEY", "YOUR_DEFAULT_API_KEY")
-
+#ALPHA_VANTAGE_API_KEY = st.secrets.get("ALPHA_VANTAGE_API_KEY", "YOUR_DEFAULT_API_KEY")
 @st.cache_data(ttl=3600)
 def fetch_market_data():
-    """جلب بيانات السوق من Alpha Vantage"""
-    data = {
-        "indices": {},
-        "stocks": {},
-        "news": []
-    }
+    try:
+        # الوصول إلى المفاتيح من secrets.toml
+        api_key = st.secrets["alpha_vantage"]["api_key"]
+        api_url = st.secrets["alpha_vantage"]["api_url"]
+        
+        # مثال لاستخدام API
+        url = f"{api_url}?function=TOP_GAINERS_LOSERS&apikey={api_key}"
+        response = requests.get(url)
+        # ... معالجة البيانات
+        
+    except Exception as e:
+        st.error(f"خطأ في جلب البيانات: {str(e)}")
+#@st.cache_data(ttl=3600)
+#def fetch_market_data():
+ #   """جلب بيانات السوق من Alpha Vantage"""
+  #  data = {
+  #      "indices": {},
+  #      "stocks": {},
+  #      "news": []
+  #  }
     
     try:
         # 1. جلب بيانات المؤشرات الرئيسية
