@@ -1,5 +1,6 @@
 # ملف app.py
 import streamlit as st
+import datetime
 
 # الوصول إلى إعدادات Alpha Vantage
 alpha_vantage_key = st.secrets["alpha_vantage"]["api_key"]
