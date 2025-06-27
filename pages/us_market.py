@@ -14,7 +14,7 @@ st.title("📈 نظرة شاملة على السوق الأمريكي")
 
 def main():
     @st.cache_data(ttl=3600)
-    def fetch_market_data():
+def fetch_market_data():
     try:
         # طريقة آمنة للتحقق من وجود الأسرار
         if not hasattr(st, 'secrets') or not st.secrets.get("alpha_vantage", {}).get("api_key"):
@@ -26,27 +26,31 @@ def main():
             3. وجود api_key داخل هذا القسم
             """)
             return get_sample_data()
-            
+
         api_key = st.secrets["alpha_vantage"]["api_key"]
-            
-            # جلب الأسهم الأكثر نشاطاً (حقيقية)
-            gainers, losers, most_active = fetch_top_stocks(api_key)
-            
-            # جلب الأخبار الاقتصادية (بيانات وهمية في هذا المثال)
-            news_data = get_sample_news()
-            
-            return {
-                "indices": indices_data,
-                "stocks": {
-                    "gainers": gainers,
-                    "most_active": most_active
-                },
-                "news": news_data
-            }
-            
-        except Exception as e:
-            st.error(f"حدث خطأ في جلب البيانات: {str(e)}")
-            return get_sample_data()
+
+        # 🛠️ يجب استدعاء الدالة fetch_indices_data
+        indices_data = fetch_indices_data(api_key)
+
+        # جلب الأسهم الأكثر نشاطاً (حقيقية)
+        gainers, losers, most_active = fetch_top_stocks(api_key)
+
+        # جلب الأخبار الاقتصادية (بيانات وهمية في هذا المثال)
+        news_data = get_sample_news()
+
+        return {
+            "indices": indices_data,
+            "stocks": {
+                "gainers": gainers,
+                "most_active": most_active
+            },
+            "news": news_data
+        }
+
+    except Exception as e:
+        st.error(f"حدث خطأ في جلب البيانات: {str(e)}")
+        return get_sample_data()
+
 
     def fetch_indices_data(api_key):
         """جلب بيانات المؤشرات الرئيسية"""
