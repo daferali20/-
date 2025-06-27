@@ -1,6 +1,13 @@
 # ملف app.py
 import streamlit as st
 
+# الوصول إلى إعدادات Alpha Vantage
+alpha_vantage_key = st.secrets["alpha_vantage"]["api_key"]
+alpha_vantage_url = st.secrets["alpha_vantage"]["api_url"]
+
+# الوصول إلى إعدادات التطبيق العامة
+refresh_interval = st.secrets["app_settings"]["refresh_interval"]
+default_theme = st.secrets["ui_settings"]["theme"]
 # إعدادات عامة للتطبيق
 st.set_page_config(
     page_title="نظام تحليل الأسواق المالية",
