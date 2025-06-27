@@ -1,6 +1,7 @@
 import streamlit as st
 from datetime import datetime
 import pytz
+import os
 
 # إعدادات عامة للتطبيق
 st.set_page_config(
@@ -8,6 +9,12 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# التحقق من وجود ملف الصفحة
+PAGE_PATH = "pages/us_market.py"
+if not os.path.exists(PAGE_PATH):
+    st.error(f"ملف الصفحة {PAGE_PATH} غير موجود")
+    st.stop()
 
 # عنوان التطبيق الرئيسي
 st.markdown("""
@@ -30,13 +37,11 @@ st.sidebar.info(f"""
 - آخر تحديث: {last_update} (توقيت نيويورك)
 """)
 
-# روابط سريعة
-st.sidebar.markdown("""
-**🔗 روابط مهمة:**
-- [بورصة نيويورك](https://www.nyse.com)
-- [ناسداك](https://www.nasdaq.com)
-- [Yahoo Finance](https://finance.yahoo.com)
-""")
-
-# تحميل صفحة السوق الأمريكي مباشرة
-st.switch_page("pages/us_market.py")
+# طريقة بديلة أكثر أمانًا للتحويل
+try:
+    from us_market import main  # استيراد مباشر بدل switch_page
+    main()
+except ImportError:
+    st.error("تعذر تحميل وحدة السوق الأمريكي")
+    if st.button("حاول مرة أخرى"):
+        st.rerun()
