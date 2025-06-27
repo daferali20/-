@@ -1,8 +1,8 @@
-#us_market.py
+# us_market.py
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-from datetime import datetime
+from datetime import datetime, timedelta
 import requests
 import os
 
@@ -14,66 +14,146 @@ def main():
     @st.cache_data(ttl=3600)
     def fetch_market_data():
         """جلب بيانات السوق من Alpha Vantage مع معالجة الأخطاء"""
-        data = {
-            "indices": {},
-            "stocks": {},
-            "news": []
-        }
-        
         try:
-            # 1. جلب بيانات المؤشرات الرئيسية
-            indices = ["DJIA", "SPX", "NDX", "RUT"]  # داو جونز، S&P 500، ناسداك، راسل 2000
+            # التحقق من وجود المفتاح
+            if "alpha_vantage" not in st.secrets:
+                st.error("إعدادات Alpha Vantage غير موجودة في ملف secrets.toml")
+                return get_sample_data()
+            
             api_key = st.secrets["alpha_vantage"]["api_key"]
             
-            for index in indices:
-                url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={index}&apikey={api_key}"
-                response = requests.get(url)
-                if response.status_code == 200:
-                    data["indices"][index] = response.json().get("Global Quote", {})
+            # إذا كان المفتاح غير صالح، استخدم بيانات وهمية
+            if not api_key or api_key == "your_api_key_here":
+                st.warning("يتم استخدام بيانات تجريبية لأن مفتاح API غير صالح")
+                return get_sample_data()
             
-            # 2. جلب الأسهم الأكثر ارتفاعاً (بيانات وهمية لأغراض العرض)
-            data["stocks"]["gainers"] = [
-                {"symbol": "AAPL", "name": "Apple Inc", "price": 185.32, "change": 4.25, 
-                 "change_percent": 2.35, "volume": 25000000},
-                {"symbol": "TSLA", "name": "Tesla Inc", "price": 245.67, "change": 8.12, 
-                 "change_percent": 3.42, "volume": 18000000},
-                {"symbol": "NVDA", "name": "NVIDIA Corp", "price": 678.90, "change": 22.45, 
-                 "change_percent": 3.42, "volume": 15000000},
-                {"symbol": "AMZN", "name": "Amazon.com", "price": 175.45, "change": 3.67, 
-                 "change_percent": 2.14, "volume": 12000000},
-                {"symbol": "META", "name": "Meta Platforms", "price": 485.32, "change": 10.25, 
-                 "change_percent": 2.16, "volume": 8000000}
-            ]
+            # جلب بيانات المؤشرات الرئيسية
+            indices_data = fetch_indices_data(api_key)
             
-            # 3. جلب الأسهم الأكثر تداولاً (بيانات وهمية)
-            data["stocks"]["most_active"] = [
-                {"symbol": "AAPL", "name": "Apple Inc", "price": 185.32, "change": 4.25, 
-                 "change_percent": 2.35, "volume": 45000000},
-                {"symbol": "AMD", "name": "Advanced Micro Devices", "price": 165.78, 
-                 "change": -2.45, "change_percent": -1.46, "volume": 42000000},
-                {"symbol": "F", "name": "Ford Motor", "price": 12.45, "change": 0.25, 
-                 "change_percent": 2.05, "volume": 38000000},
-                {"symbol": "T", "name": "AT&T", "price": 16.78, "change": -0.12, 
-                 "change_percent": -0.71, "volume": 35000000},
-                {"symbol": "PLTR", "name": "Palantir Tech", "price": 22.45, "change": 1.25, 
-                 "change_percent": 5.89, "volume": 32000000}
-            ]
+            # جلب الأسهم الأكثر نشاطاً (حقيقية)
+            gainers, losers, most_active = fetch_top_stocks(api_key)
             
-            # 4. جلب الأخبار الاقتصادية (بيانات وهمية)
-            data["news"] = [
-                {"title": "البنك الفيدرالي يقرر الإبقاء على أسعار الفائدة دون تغيير", 
-                 "source": "CNBC", "date": datetime.now().strftime("%Y-%m-%d"), "impact": "عال"},
-                {"title": "تقارير: نمو قوي في الوظائف غير الزراعية", 
-                 "source": "Bloomberg", "date": datetime.now().strftime("%Y-%m-%d"), "impact": "متوسط"},
-                {"title": "انخفاض مفاجئ في مخزونات النفط الأمريكية", 
-                 "source": "Reuters", "date": datetime.now().strftime("%Y-%m-%d"), "impact": "عال"}
-            ]
+            # جلب الأخبار الاقتصادية (بيانات وهمية في هذا المثال)
+            news_data = get_sample_news()
+            
+            return {
+                "indices": indices_data,
+                "stocks": {
+                    "gainers": gainers,
+                    "most_active": most_active
+                },
+                "news": news_data
+            }
             
         except Exception as e:
-            st.error(f"خطأ في جلب البيانات: {str(e)}")
-            st.warning("يتم عرض بيانات تجريبية لأغراض العرض فقط")
+            st.error(f"حدث خطأ في جلب البيانات: {str(e)}")
+            return get_sample_data()
+
+    def fetch_indices_data(api_key):
+        """جلب بيانات المؤشرات الرئيسية"""
+        indices = {
+            "DJIA": {"name": "داو جونز", "symbol": "^DJI", "emoji": "🏭"},
+            "SPX": {"name": "S&P 500", "symbol": "^GSPC", "emoji": "📈"},
+            "NDX": {"name": "ناسداك", "symbol": "^IXIC", "emoji": "💻"},
+            "RUT": {"name": "راسل 2000", "symbol": "^RUT", "emoji": "📊"}
+        }
         
-        return data
+        indices_data = {}
+        for key, info in indices.items():
+            try:
+                url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={info['symbol']}&apikey={api_key}"
+                response = requests.get(url)
+                if response.status_code == 200:
+                    indices_data[key] = response.json().get("Global Quote", {})
+            except:
+                continue
+                
+        return indices_data
+
+    def fetch_top_stocks(api_key):
+        """جلب الأسهم الأكثر نشاطاً"""
+        try:
+            url = f"https://www.alphavantage.co/query?function=TOP_GAINERS_LOSERS&apikey={api_key}"
+            response = requests.get(url)
+            data = response.json()
+            
+            gainers = []
+            losers = []
+            most_active = []
+            
+            if "top_gainers" in data:
+                for stock in data["top_gainers"][:5]:
+                    gainers.append({
+                        "symbol": stock["ticker"],
+                        "name": stock.get("companyName", stock["ticker"]),
+                        "price": float(stock["price"]),
+                        "change": float(stock["change_amount"]),
+                        "change_percent": float(stock["change_percentage"].rstrip('%')),
+                        "volume": int(stock["volume"])
+                    })
+            
+            if "most_actively_traded" in data:
+                for stock in data["most_actively_traded"][:5]:
+                    most_active.append({
+                        "symbol": stock["ticker"],
+                        "name": stock.get("companyName", stock["ticker"]),
+                        "price": float(stock["price"]),
+                        "change": float(stock["change_amount"]),
+                        "change_percent": float(stock["change_percentage"].rstrip('%')),
+                        "volume": int(stock["volume"])
+                    })
+                    
+            return gainers, losers, most_active
+            
+        except:
+            # إذا فشل جلب البيانات الحقيقية، نستخدم بيانات وهمية
+            return get_sample_stocks()
+
+    def get_sample_stocks():
+        """إرجاع بيانات أسهم وهمية"""
+        gainers = [
+            {"symbol": "AAPL", "name": "Apple Inc", "price": 185.32, "change": 4.25, 
+             "change_percent": 2.35, "volume": 25000000},
+            {"symbol": "TSLA", "name": "Tesla Inc", "price": 245.67, "change": 8.12, 
+             "change_percent": 3.42, "volume": 18000000},
+            {"symbol": "NVDA", "name": "NVIDIA Corp", "price": 678.90, "change": 22.45, 
+             "change_percent": 3.42, "volume": 15000000}
+        ]
+        
+        most_active = [
+            {"symbol": "AAPL", "name": "Apple Inc", "price": 185.32, "change": 4.25, 
+             "change_percent": 2.35, "volume": 45000000},
+            {"symbol": "AMD", "name": "Advanced Micro Devices", "price": 165.78, 
+             "change": -2.45, "change_percent": -1.46, "volume": 42000000},
+            {"symbol": "F", "name": "Ford Motor", "price": 12.45, "change": 0.25, 
+             "change_percent": 2.05, "volume": 38000000}
+        ]
+        
+        return gainers, [], most_active
+
+    def get_sample_news():
+        """إرجاع أخبار وهمية"""
+        return [
+            {"title": "البنك الفيدرالي يقرر الإبقاء على أسعار الفائدة دون تغيير", 
+             "source": "CNBC", "date": datetime.now().strftime("%Y-%m-%d"), "impact": "عال"},
+            {"title": "تقارير: نمو قوي في الوظائف غير الزراعية", 
+             "source": "Bloomberg", "date": datetime.now().strftime("%Y-%m-%d"), "impact": "متوسط"}
+        ]
+
+    def get_sample_data():
+        """إرجاع بيانات وهمية كاملة"""
+        return {
+            "indices": {
+                "DJIA": {"05. price": "34200.12", "08. previous close": "34025.45"},
+                "SPX": {"05. price": "4380.34", "08. previous close": "4350.12"},
+                "NDX": {"05. price": "14850.67", "08. previous close": "14780.23"}
+            },
+            "stocks": {
+                "gainers": get_sample_stocks()[0],
+                "most_active": get_sample_stocks()[2]
+            },
+            "news": get_sample_news()
+        }
 
     def display_market_indices(indices_data):
         """عرض المؤشرات الرئيسية"""
@@ -83,7 +163,7 @@ def main():
             st.warning("لا تتوفر بيانات المؤشرات حالياً")
             return
         
-        cols = st.columns(4)
+        cols = st.columns(len(indices_data))
         index_info = {
             "DJIA": {"name": "داو جونز", "emoji": "🏭"},
             "SPX": {"name": "S&P 500", "emoji": "📈"},
@@ -93,16 +173,21 @@ def main():
         
         for idx, (symbol, data) in enumerate(indices_data.items()):
             if data:
-                change = float(data.get("05. price", 0)) - float(data.get("08. previous close", 0))
-                change_percent = (change / float(data.get("08. previous close", 1))) * 100
-                
-                with cols[idx]:
-                    st.metric(
-                        label=f"{index_info.get(symbol, {}).get('emoji', '📌')} {index_info.get(symbol, {}).get('name', symbol)}",
-                        value=f"{float(data.get('05. price', 0)):,.2f}",
-                        delta=f"{change_percent:.2f}%",
-                        delta_color="normal"
-                    )
+                try:
+                    current_price = float(data.get("05. price", 0))
+                    prev_close = float(data.get("08. previous close", current_price))
+                    change = current_price - prev_close
+                    change_percent = (change / prev_close) * 100 if prev_close != 0 else 0
+                    
+                    with cols[idx]:
+                        st.metric(
+                            label=f"{index_info.get(symbol, {}).get('emoji', '📌')} {index_info.get(symbol, {}).get('name', symbol)}",
+                            value=f"{current_price:,.2f}",
+                            delta=f"{change_percent:.2f}%",
+                            delta_color="normal"
+                        )
+                except:
+                    continue
 
     def display_stock_section(title, stocks, min_price=0.55):
         """عرض قسم الأسهم مع فلترة حسب السعر"""
@@ -133,7 +218,8 @@ def main():
         fig.update_layout(
             title=f"أداء {title} (تغير %)",
             yaxis_title="نسبة التغير %",
-            showlegend=False
+            showlegend=False,
+            height=400
         )
         
         st.plotly_chart(fig, use_container_width=True)
@@ -141,6 +227,7 @@ def main():
         # عرض جدول تفصيلي
         st.dataframe(
             df[["symbol", "name", "price", "change", "change_percent", "volume"]]
+            .sort_values("change_percent", ascending=False)
             .rename(columns={
                 "symbol": "الرمز",
                 "name": "الشركة",
@@ -149,7 +236,8 @@ def main():
                 "change_percent": "التغير %",
                 "volume": "حجم التداول"
             }),
-            height=300
+            height=300,
+            use_container_width=True
         )
 
     def display_economic_news(news_data):
