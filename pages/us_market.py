@@ -5,7 +5,9 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import requests
 import os
-
+st.write("المسار الحالي:", os.getcwd())
+st.write("محتويات مجلد .streamlit:", os.listdir(".streamlit"))
+api_key = os.getenv("ALPHA_VANTAGE_KEY") or st.secrets.get("alpha_vantage", {}).get("api_key")
 # إعدادات الصفحة
 st.set_page_config(page_title="نظرة على السوق الأمريكي", layout="wide")
 st.title("📈 نظرة شاملة على السوق الأمريكي")
@@ -13,22 +15,19 @@ st.title("📈 نظرة شاملة على السوق الأمريكي")
 def main():
     @st.cache_data(ttl=3600)
     def fetch_market_data():
-        """جلب بيانات السوق من Alpha Vantage مع معالجة الأخطاء"""
-        try:
-            # التحقق من وجود المفتاح
-            if "alpha_vantage" not in st.secrets:
-                st.error("إعدادات Alpha Vantage غير موجودة في ملف secrets.toml")
-                return get_sample_data()
+    try:
+        # طريقة آمنة للتحقق من وجود الأسرار
+        if not hasattr(st, 'secrets') or not st.secrets.get("alpha_vantage", {}).get("api_key"):
+            st.error("⚠️ إعدادات Alpha Vantage غير موجودة")
+            st.info("""
+            الرجاء التأكد من:
+            1. وجود ملف `.streamlit/secrets.toml`
+            2. احتوائه على قسم [alpha_vantage]
+            3. وجود api_key داخل هذا القسم
+            """)
+            return get_sample_data()
             
-            api_key = st.secrets["alpha_vantage"]["api_key"]
-            
-            # إذا كان المفتاح غير صالح، استخدم بيانات وهمية
-            if not api_key or api_key == "your_api_key_here":
-                st.warning("يتم استخدام بيانات تجريبية لأن مفتاح API غير صالح")
-                return get_sample_data()
-            
-            # جلب بيانات المؤشرات الرئيسية
-            indices_data = fetch_indices_data(api_key)
+        api_key = st.secrets["alpha_vantage"]["api_key"]
             
             # جلب الأسهم الأكثر نشاطاً (حقيقية)
             gainers, losers, most_active = fetch_top_stocks(api_key)
