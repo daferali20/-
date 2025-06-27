@@ -4,6 +4,7 @@ import plotly.graph_objects as go
 from datetime import datetime
 import requests
 import os
+st.write("🔑 Alpha Vantage Key:", st.secrets.get("alpha_vantage", {}).get("api_key"))
 
 st.set_page_config(page_title="نظرة على السوق الأمريكي", layout="wide")
 st.title("📈 نظرة شاملة على السوق الأمريكي")
