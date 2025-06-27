@@ -1,0 +1,4 @@
+# أضف هذا إلى ملف .gitignore
+.streamlit/secrets.toml
+*.env
+__pycache__/
