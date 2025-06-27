@@ -10,7 +10,7 @@ st.set_page_config(page_title="نظرة على السوق الأمريكي", lay
 st.title("📈 نظرة شاملة على السوق الأمريكي")
 
 # API Key لـ Alpha Vantage (يمكن الحصول على مفتاح مجاني من موقعهم)
-ALPHA_VANTAGE_API_KEY = st.secrets.get("ALPHA_VANTAGE_API_KEY")
+ALPHA_VANTAGE_API_KEY = st.secrets.get("ALPHA_VANTAGE_API_KEY", "YOUR_DEFAULT_API_KEY")
 
 @st.cache_data(ttl=3600)
 def fetch_market_data():
