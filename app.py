@@ -1,14 +1,8 @@
 # ملف app.py
 import streamlit as st
-import datetime
+from datetime import datetime
+import pytz
 
-# الوصول إلى إعدادات Alpha Vantage
-alpha_vantage_key = st.secrets["alpha_vantage"]["api_key"]
-alpha_vantage_url = st.secrets["alpha_vantage"]["api_url"]
-
-# الوصول إلى إعدادات التطبيق العامة
-refresh_interval = st.secrets["app_settings"]["refresh_interval"]
-default_theme = st.secrets["ui_settings"]["theme"]
 # إعدادات عامة للتطبيق
 st.set_page_config(
     page_title="نظام تحليل الأسواق المالية",
@@ -36,12 +30,15 @@ market = st.sidebar.radio(
 )
 
 st.sidebar.markdown("---")
-st.sidebar.info("""
+
+# قسم معلومات التطبيق
+last_update = datetime.now(pytz.timezone('Asia/Riyadh')).strftime("%Y-%m-%d %H:%M")
+st.sidebar.info(f"""
 **معلومات التطبيق:**
 - إصدار 1.0
 - بيانات السوق يتم تحديثها كل ساعة
-- آخر تحديث: {}
-""".format(datetime.now().strftime("%Y-%m-%d %H:%M")))
+- آخر تحديث: {last_update}
+""")
 
 # تحميل الصفحة المحددة
 if market == "السوق السعودي":
