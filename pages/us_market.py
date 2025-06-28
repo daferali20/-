@@ -5,13 +5,13 @@ from datetime import datetime
 import requests
 import os
 #from dotenv import load_dotenv
-st.write("🔑 Alpha Vantage Key:", st.secrets.get("alpha_vantage", {}).get("api_key"))
+#st.write("🔑 Alpha Vantage Key:", st.secrets.get("alpha_vantage", {}).get("api_key"))
 
 st.set_page_config(page_title="نظرة على السوق الأمريكي", layout="wide")
 st.title("📈 نظرة شاملة على السوق الأمريكي")
 
-st.write("المسار الحالي:", os.getcwd())
-st.write("محتويات مجلد .streamlit:", os.listdir(".streamlit"))
+#st.write("المسار الحالي:", os.getcwd())
+#st.write("محتويات مجلد .streamlit:", os.listdir(".streamlit"))
 
 #load_dotenv('.env')  # تحديد المسار الصريح
 
