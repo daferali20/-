@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 from datetime import datetime
 import requests
 import os
-from dotenv import load_dotenv
+#from dotenv import load_dotenv
 st.write("🔑 Alpha Vantage Key:", st.secrets.get("alpha_vantage", {}).get("api_key"))
 
 st.set_page_config(page_title="نظرة على السوق الأمريكي", layout="wide")
@@ -13,9 +13,9 @@ st.title("📈 نظرة شاملة على السوق الأمريكي")
 st.write("المسار الحالي:", os.getcwd())
 st.write("محتويات مجلد .streamlit:", os.listdir(".streamlit"))
 
-load_dotenv('.env')  # تحديد المسار الصريح
+#load_dotenv('.env')  # تحديد المسار الصريح
 
-API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY") or "default_key_for_dev"
+#API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY") or "default_key_for_dev"
 
 @st.cache_data(ttl=3600)
 def fetch_market_data():
