@@ -1,40 +1,45 @@
 import streamlit as st
-import pandas as pd
-import plotly.graph_objects as go
 from datetime import datetime
-import requests
+import pytz
 import os
 
-def main():
-    st.title("📊 لوحة تحليل السوق الأمريكي")
-    
-    # التحقق من وجود API Key
-    if "alpha_vantage" not in st.secrets:
-        st.error("⚠️ إعدادات Alpha Vantage غير موجودة في secrets.toml")
-        return
-    
-    api_key = st.secrets["alpha_vantage"]["api_key"]
-    
-    @st.cache_data(ttl=3600)
-    def fetch_data():
-        try:
-            # جلب بيانات المؤشرات (مثال)
-            url = f"https://www.alphavantage.co/query?function=TOP_GAINERS_LOSERS&apikey={api_key}"
-            response = requests.get(url)
-            data = response.json()
-            return data
-        except Exception as e:
-            st.error(f"خطأ في جلب البيانات: {str(e)}")
-            return None
-    
-    data = fetch_data()
-    
-    if data:
-        # عرض البيانات هنا
-        st.write("تم جلب البيانات بنجاح")
-        # ... (أضف باقي الكود الخاص بعرض البيانات)
-    else:
-        st.warning("لا توجد بيانات متاحة حاليًا")
+# إعدادات عامة للتطبيق
+st.set_page_config(
+    page_title="نظام تحليل السوق الأمريكي",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-if __name__ == "__main__":
-    main()
+# عنوان التطبيق الرئيسي
+st.markdown("""
+<div style="text-align: center; margin-bottom: 30px;">
+    <h1 style="color: #2e86c1;">📈 نظام تحليل السوق الأمريكي</h1>
+    <p>أداة متكاملة لتحليل مؤشرات وأسهم السوق الأمريكي</p>
+</div>
+""", unsafe_allow_html=True)
+
+# شريط جانبي للتنقل
+st.sidebar.title("🔍 القائمة الرئيسية")
+st.sidebar.markdown("---")
+
+# قسم معلومات التطبيق
+last_update = datetime.now(pytz.timezone('America/New_York')).strftime("%Y-%m-%d %H:%M")
+st.sidebar.info(f"""
+**معلومات التطبيق:**
+- الإصدار: 2.0
+- تحديث البيانات: كل 30 دقيقة
+- آخر تحديث: {last_update} (توقيت نيويورك)
+""")
+
+# طريقة تشغيل الصفحة الرئيسية
+try:
+    # التحقق من وجود الملف أولاً
+    if os.path.exists("pages/us_market.py"):
+        from pages.us_market import main
+        main()
+    else:
+        st.error("ملف الصفحة الرئيسية غير موجود")
+except Exception as e:
+    st.error(f"حدث خطأ: {str(e)}")
+    if st.button("حاول مرة أخرى"):
+        st.rerun()
