@@ -31,26 +31,39 @@ if uploaded_file is not None:
     st.success(f"✅ تم العثور على {len(filtered)} شركة جيدة.")
     st.dataframe(filtered[["symbol", "companyName", "price", "marketCap", "lastAnnualDividend"]])
 
-    # توليد الرسالة
-    message = "📊 الشركات الجيدة حسب التحليل:\n\n"
+    # تقسيم الشركات إلى رسائل متعددة (كل 10 شركات في رسالة)
+    messages = []
+    companies_per_message = 10
 
-    for _, row in filtered.head(10).iterrows():
-        symbol = row['symbol']
-        name = row['companyName']
-        price = row['price']
-        dividend = row['lastAnnualDividend']
-        
-        message += f"🔹 {symbol} - {name}\n"
-        message += f"     💲 السعر: {price:,.2f}\n"
-        message += f"     💰 التوزيع: {dividend:,.2f}\n\n"
+    filtered = filtered.reset_index(drop=True)
+    total = len(filtered)
 
+    for i in range(0, total, companies_per_message):
+        chunk = filtered.iloc[i:i + companies_per_message]
+        message = f"📊 الشركات الجيدة حسب التحليل ({i+1} - {min(i+companies_per_message, total)}):\n\n"
 
+        for _, row in chunk.iterrows():
+            symbol = row['symbol']
+            name = row['companyName']
+            price = row['price']
+            dividend = row['lastAnnualDividend']
+
+            message += f"🔹 {symbol} - {name}\n"
+            message += f"     💲 السعر: {price:,.2f}\n"
+            message += f"     💰 التوزيع: {dividend:,.2f}\n\n"
+
+        message += "📡 تم الإرسال من النظام."
+        messages.append(message)
 
     # إرسال إلى تيليجرام
     if st.button("📨 إرسال النتائج إلى Telegram"):
         sender = TelegramSender()
-        result = sender.send_message(message)
-        if result and isinstance(result, dict) and result.get("ok"):
-            st.success("✅ تم إرسال الرسالة بنجاح!")
+        success_count = 0
+        for msg in messages:
+            result = sender.send_message(msg)
+            if result and isinstance(result, dict) and result.get("ok"):
+                success_count += 1
+        if success_count == len(messages):
+            st.success(f"✅ تم إرسال جميع الرسائل ({success_count}) بنجاح!")
         else:
-            st.error("❌ فشل في إرسال الرسالة.")
+            st.warning(f"⚠️ تم إرسال {success_count} من {len(messages)} رسالة.")
