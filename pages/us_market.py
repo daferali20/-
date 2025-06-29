@@ -1,24 +1,25 @@
+# استيراد المكتبات الضرورية
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 from datetime import datetime
 import requests
-import os
 
+# الدالة الرئيسية للبرنامج
 def main():
     st.title("📊 لوحة تحليل السوق الأمريكي - بيانات حقيقية")
     
-    # التحقق من وجود API Key
+    # ✅ القسم الأول: التحقق من وجود API Key داخل ملف secrets
     if "alpha_vantage" not in st.secrets:
         st.error("⚠️ إعدادات Alpha Vantage غير موجودة في secrets.toml")
         st.stop()
     
     api_key = st.secrets["alpha_vantage"]["api_key"]
     
+    # ✅ القسم الثاني: دالة جلب البيانات من Alpha Vantage (مخزنة مؤقتًا ساعة)
     @st.cache_data(ttl=3600)
     def fetch_real_time_data():
         try:
-            # جلب بيانات الأسهم والمؤشرات الحقيقية
             endpoints = {
                 "market_status": f"https://www.alphavantage.co/query?function=MARKET_STATUS&apikey={api_key}",
                 "gainers_losers": f"https://www.alphavantage.co/query?function=TOP_GAINERS_LOSERS&apikey={api_key}",
@@ -41,27 +42,28 @@ def main():
             st.error(f"خطأ في جلب البيانات: {str(e)}")
             return None
     
+    # ✅ القسم الثالث: تحميل البيانات الحقيقية
     data = fetch_real_time_data()
     
     if not data:
         st.error("❌ تعذر جلب البيانات من السوق. يرجى التحقق من اتصال الإنترنت أو مفتاح API")
         st.stop()
     
-    # عرض حالة السوق
+    # ✅ القسم الرابع: عرض حالة السوق الحالية
     if "market_status" in data:
         st.header("🔄 حالة السوق الحالية")
         market_status = data["market_status"].get("markets", [])
         if market_status:
             status_df = pd.DataFrame(market_status)
             st.dataframe(status_df[["market_type", "region", "current_status", "last_updated"]]
-                        .rename(columns={
-                            "market_type": "نوع السوق",
-                            "region": "المنطقة",
-                            "current_status": "الحالة",
-                            "last_updated": "آخر تحديث"
-                        }))
+                         .rename(columns={
+                             "market_type": "نوع السوق",
+                             "region": "المنطقة",
+                             "current_status": "الحالة",
+                             "last_updated": "آخر تحديث"
+                         }))
     
-    # عرض المؤشرات الرئيسية
+    # ✅ القسم الخامس: عرض المؤشرات الرئيسية (S&P 500، Dow Jones، NASDAQ)
     st.header("📌 المؤشرات الرئيسية")
     cols = st.columns(3)
     
@@ -81,18 +83,15 @@ def main():
                     delta=f"{float(quote.get('10. change percent', '0').replace('%','')):.2f}%"
                 )
     
-    # عرض الأسهم الأكثر ارتفاعاً
+    # ✅ القسم السادس: عرض الأسهم الأكثر ارتفاعاً
     if "gainers_losers" in data:
         st.header("🚀 الأسهم الأكثر ارتفاعاً")
         gainers = data["gainers_losers"].get("top_gainers", [])
         if gainers:
             gainers_df = pd.DataFrame(gainers)
-            
-            # تحويل الأنواع
             gainers_df["change_percentage"] = gainers_df["change_percentage"].str.replace('%', '').astype(float)
             gainers_df["price"] = gainers_df["price"].astype(float)
             
-            # عرض الجدول
             st.dataframe(gainers_df[["ticker", "price", "change_amount", "change_percentage", "volume"]]
                 .rename(columns={
                     "ticker": "الرمز",
@@ -102,7 +101,6 @@ def main():
                     "volume": "الحجم"
                 }))
             
-            # رسم بياني
             fig = go.Figure(go.Bar(
                 x=gainers_df["ticker"],
                 y=gainers_df["change_percentage"],
@@ -116,10 +114,12 @@ def main():
             )
             st.plotly_chart(fig, use_container_width=True)
     
-    # قسم التحليل الفني (باستخدام بيانات حقيقية)
+    # ✅ القسم السابع: التحليل الفني لسهم محدد
     st.header("📈 التحليل الفني")
-    if "gainers_losers" in data and "most_actively_traded" in data["gainers_losers"]:
-        active_stocks = [stock["ticker"] for stock in data["gainers_losers"]["most_actively_traded"][:5]]
+    
+    # 🔴 هنا كان الخطأ: استبدل most_actively_traded بـ top_gainers لتفادي الخطأ
+    if "gainers_losers" in data and "top_gainers" in data["gainers_losers"]:
+        active_stocks = [stock["ticker"] for stock in data["gainers_losers"]["top_gainers"][:5]]
         selected_stock = st.selectbox("اختر سهم للتحليل", active_stocks)
         
         if st.button("عرض البيانات التاريخية"):
@@ -132,7 +132,6 @@ def main():
                     df.index = pd.to_datetime(df.index)
                     df = df.astype(float)
                     
-                    # Create a Plotly figure for better visualization
                     fig = go.Figure()
                     fig.add_trace(go.Scatter(
                         x=df.index,
@@ -152,8 +151,8 @@ def main():
             except Exception as e:
                 st.error(f"خطأ في جلب البيانات التاريخية: {str(e)}")
 
+# ✅ القسم الأخير: إعداد الصفحة وتشغيل التطبيق
 if __name__ == "__main__":
-    # Set page configuration
     st.set_page_config(
         page_title="لوحة تحليل السوق الأمريكي",
         page_icon="📊",
