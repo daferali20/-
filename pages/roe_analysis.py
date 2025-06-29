@@ -4,8 +4,8 @@ import plotly.express as px
 import requests
 from datetime import datetime
 from telegram_sender import send_telegram_message
-import streamlit as st
-st.write(st.secrets)
+
+
 def main():
     st.title("📊 تحليل الشركات حسب عائد حقوق المساهمين (ROE)")
 
