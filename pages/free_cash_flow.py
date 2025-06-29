@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import requests
 from datetime import datetime
-from telegram_sender import TelegramSender  # تأكد أن هذا الملف موجود
+from telegram_sender import TelegramSender
 
 st.set_page_config(page_title="تحليل التدفق النقدي الحر", layout="wide")
 
@@ -19,18 +19,19 @@ symbols_input = st.text_input("🔍 أدخل رموز الأسهم (مثل: AAPL
 
 if st.button("📊 تحليل FCF"):
     symbols = [sym.strip().upper() for sym in symbols_input.split(",") if sym.strip()]
-    
     results = []
 
-    with st.spinner("جاري تحليل التدفقات النقدية..."):
+    with st.spinner("⏳ جاري تحليل التدفقات النقدية..."):
         for symbol in symbols:
             url = f"https://www.alphavantage.co/query?function=CASH_FLOW&symbol={symbol}&apikey={api_key}"
             response = requests.get(url)
             if response.status_code != 200:
+                st.warning(f"⚠️ لم يتم جلب بيانات {symbol}")
                 continue
 
             data = response.json()
             if "annualReports" not in data:
+                st.warning(f"⚠️ لا توجد بيانات مالية لـ {symbol}")
                 continue
 
             reports = data["annualReports"]
@@ -47,7 +48,7 @@ if st.button("📊 تحليل FCF"):
                         "capitalExpenditures": capex,
                         "freeCashFlow": fcf
                     })
-                except:
+                except Exception:
                     continue
 
             if fcf_data:
@@ -57,29 +58,27 @@ if st.button("📊 تحليل FCF"):
     if not results:
         st.warning("❌ لا توجد بيانات FCF متاحة.")
     else:
+        message = "💰 <b>تحليل التدفق النقدي الحر (FCF)</b>\n\n"
         for symbol, df in results:
             st.subheader(f"📈 {symbol} - Free Cash Flow Analysis")
             st.dataframe(df[["fiscalDateEnding", "freeCashFlow"]])
-
             st.line_chart(df.set_index("fiscalDateEnding")["freeCashFlow"])
 
-        # زر إرسال إلى التليجرام
-        if st.button("📩 إرسال النتائج إلى التليجرام"):
+            message += f"📊 <b>{symbol}</b>\n"
+            for _, row in df.iterrows():
+                fcf_m = round(row['freeCashFlow'] / 1e6, 2)
+                message += f"- {row['fiscalDateEnding']}: ${fcf_m}M\n"
+            message += "───────────────\n"
+
+        message += f"\n⏰ التوقيت: {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+
+        if st.button("📩 إرسال النتائج إلى تليجرام"):
             try:
-                msg = "💰 <b>تحليل التدفق النقدي الحر (FCF)</b>\n\n"
-                for symbol, df in results:
-                    msg += f"📊 <b>{symbol}</b>\n"
-                    for _, row in df.iterrows():
-                        fcf_m = round(row['freeCashFlow'] / 1e6, 2)
-                        msg += f"- {row['fiscalDateEnding']}: ${fcf_m}M\n"
-                    msg += "───────────────\n"
-                msg += f"\n⏰ التوقيت: {datetime.now().strftime('%Y-%m-%d %H:%M')}"
-                
                 sender = TelegramSender()
-                success = sender.send_message(msg)
+                success = sender.send_message(message)
                 if success:
                     st.success("✅ تم إرسال النتائج إلى تليجرام بنجاح!")
                 else:
-                    st.error("❌ فشل في إرسال الرسالة.")
+                    st.error("❌ فشل في إرسال الرسالة. تحقق من التوكن و chat_id.")
             except Exception as e:
-                st.error(f"حدث خطأ: {e}")
+                st.error(f"❌ حدث خطأ أثناء الإرسال: {e}")
