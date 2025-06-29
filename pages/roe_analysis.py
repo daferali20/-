@@ -3,7 +3,6 @@ import pandas as pd
 import plotly.express as px
 import requests
 from datetime import datetime
-#from telegram_sender import send_telegram_message
 from telegram_sender import TelegramSender
 
 
@@ -14,18 +13,15 @@ def main():
     if "alpha_vantage" not in st.secrets:
         st.error("⚠️ إعدادات Alpha Vantage غير موجودة في secrets.toml")
         st.stop()
-    
+
     if "telegram" not in st.secrets:
         st.error("⚠️ إعدادات Telegram غير موجودة في secrets.toml")
         st.stop()
 
     api_key = st.secrets["alpha_vantage"]["api_key"]
-    telegram_token = st.secrets["telegram"]["token"]
-    telegram_chat_id = st.secrets["telegram"]["chat_id"]
 
     @st.cache_data(ttl=86400)
     def fetch_roe_data():
-        # جلب بيانات شركة واحدة كمثال (يمكنك توسيعها لاحقًا)
         try:
             url = f"https://www.alphavantage.co/query?function=OVERVIEW&symbol=MSFT&apikey={api_key}"
             response = requests.get(url)
@@ -40,7 +36,7 @@ def main():
     st.sidebar.header("🔍 معايير البحث")
     min_roe = st.sidebar.slider("حدد أدنى عائد على حقوق المساهمين (ROE)%", 0, 50, 15)
     sector = st.sidebar.selectbox("اختر القطاع", [
-        "الكل", "التكنولوجيا", "الطاقة", "الرعاية الصحية", 
+        "الكل", "التكنولوجيا", "الطاقة", "الرعاية الصحية",
         "الخدمات المالية", "السلع الاستهلاكية"
     ])
 
@@ -90,23 +86,19 @@ def main():
                         message += f"- أدنى ROE: {min_roe}%\n"
                         message += f"- القطاع: {sector}\n\n"
                         message += f"<b>الشركات التي تطابق المعايير ({len(df)}):</b>\n\n"
-                        
+
                         for i, row in df.iterrows():
                             message += f"🏢 <b>{row['Company']}</b> ({row['Symbol']})\n"
                             message += f"📊 ROE: {row['ROE']}%\n"
                             message += f"🏛 القطاع: {row['Sector']}\n"
                             message += f"💰 القيمة السوقية: {row['MarketCap']}\n"
                             message += "────────────────────\n"
-                        
+
                         message += f"\n🔄 آخر تحديث: {datetime.now().strftime('%Y-%m-%d %H:%M')}"
-                        
-                        # إرسال الرسالة
-                        success = send_telegram_message(
-                            token=telegram_token,
-                            chat_id=telegram_chat_id,
-                            message=message
-                        )
-                        
+
+                        sender = TelegramSender()
+                        success = sender.send_message(message)
+
                         if success:
                             st.success("✅ تم إرسال النتائج إلى تليجرام بنجاح!")
                         else:
@@ -125,6 +117,7 @@ def main():
         - اضغط على "بحث"
         - ثم يمكنك إرسال النتائج مباشرة إلى تليجرام
         """)
+
 
 if __name__ == "__main__":
     main()
