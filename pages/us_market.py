@@ -1,4 +1,4 @@
-import streamlit as st
+mport streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 from datetime import datetime
@@ -41,6 +41,39 @@ def main():
             st.error(f"خطأ في جلب البيانات: {str(e)}")
             return None
     
+    data = fetch_real_time_data()
+    
+    if not data:
+        st.error("❌ تعذر جلب البيانات من السوق. يرجى التحقق من اتصال الإنترنت أو مفتاح API")
+        st.stop()
+    
+    # عرض حالة السوق (مع التحقق من وجود الأعمدة)
+    if "market_status" in data and "markets" in data["market_status"]:
+        st.header("🔄 حالة السوق الحالية")
+        market_status = data["market_status"]["markets"]
+        
+        if market_status and isinstance(market_status, list):
+            try:
+                status_df = pd.DataFrame(market_status)
+                
+                # التحقق من وجود الأعمدة المطلوبة
+                available_columns = status_df.columns.tolist()
+                required_columns = ["market_type", "region", "current_status", "last_updated"]
+                columns_to_show = [col for col in required_columns if col in available_columns]
+                
+                if columns_to_show:
+                    st.dataframe(status_df[columns_to_show].rename(columns={
+                        "market_type": "نوع السوق",
+                        "region": "المنطقة",
+                        "current_status": "الحالة",
+                        "last_updated": "آخر تحديث"
+                    }))
+                else:
+                    st.warning("بيانات حالة السوق لا تحتوي على الأعمدة المطلوبة")
+                    st.write("الأعمدة المتاحة:", available_columns)
+            except Exception as e:
+                st.error(f"خطأ في معالجة بيانات حالة السوق: {str(e)}")
+   #-----------------------------666666666666666666666--------------------------------------------- 
     data = fetch_real_time_data()
     
     if not data:
