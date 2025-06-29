@@ -3,6 +3,18 @@ import pandas as pd
 import plotly.express as px
 import requests
 from datetime import datetime
+from telegram_sender import send_telegram_message
+
+# زر لإرسال الرسالة
+if st.button("📩 إرسال الأسهم المرتفعة إلى التليجرام"):
+    message = "🚀 قائمة الأسهم الأمريكية الأكثر ارتفاعًا:\n"
+    for i, row in gainers_df.iterrows():
+        message += f"🔹 {row['ticker']} - ${row['price']} ({row['change_percentage']}%)\n"
+
+    if send_telegram_message(message):
+        st.success("✅ تم إرسال الرسالة إلى تليجرام بنجاح!")
+    else:
+        st.error("❌ فشل في إرسال الرسالة. تحقق من الإعدادات.")
 
 def main():
     st.title("📊 تحليل الشركات حسب عائد حقوق المساهمين (ROE)")
