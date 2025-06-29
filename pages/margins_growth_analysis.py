@@ -38,9 +38,10 @@ if st.button("📊 تحليل البيانات"):
                 continue
 
             try:
-                op_margin = float(metrics.get("operatingMarginTTM", "nan")) * 100
-                net_margin = float(metrics.get("netProfitMarginTTM", "nan")) * 100
-                revenue_growth = float(metrics.get("revenueGrowthTTM", "nan")) * 100
+                op_margin = float(metrics.get("operatingMargin", metrics.get("operatingMarginTTM", "nan"))) * 100
+                net_margin = float(metrics.get("netProfitMargin", metrics.get("netProfitMarginTTM", "nan"))) * 100
+                revenue_growth = float(metrics.get("revenueGrowth", metrics.get("revenueGrowthTTM", "nan"))) * 100
+
 
                 results.append({
                     "Symbol": symbol,
