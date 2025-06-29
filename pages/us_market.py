@@ -138,5 +138,4 @@ def main():
             except Exception as e:
                 st.error(f"خطأ في جلب البيانات التاريخية: {str(e)}")
 
-if __name__ == "__main__":
-    main()
+
