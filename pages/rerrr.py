@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
-
+import streamlit as st
+st.write(st.secrets)
 def send_test_message():
     token = st.secrets["telegram"]["bot_token"]
     chat_id = st.secrets["telegram"]["chat_id"]
