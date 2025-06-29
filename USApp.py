@@ -2,7 +2,6 @@ import streamlit as st
 from datetime import datetime
 import pytz
 import os
-import sys
 
 # إعدادات عامة للتطبيق
 st.set_page_config(
@@ -32,46 +31,15 @@ st.sidebar.info(f"""
 - آخر تحديث: {last_update} (توقيت نيويورك)
 """)
 
-# إضافة خيارات التنقل
-selected_page = st.sidebar.radio(
-    "اختر الصفحة:",
-    ["اللوحة الرئيسية", "تحليل ROE", "الأسهم المفضلة"]
-)
-
-# طريقة تشغيل الصفحات
+# طريقة تشغيل الصفحة الرئيسية
 try:
-    if selected_page == "اللوحة الرئيسية":
-        if os.path.exists("pages/us_market.py"):
-            # إضافة المسار إلى sys.path للاستيراد الصحيح
-            sys.path.insert(0, os.path.abspath('.'))
-            from pages.us_market import main as market_main
-            market_main()
-        else:
-            st.error("ملف اللوحة الرئيسية غير موجود")
-    
-    elif selected_page == "تحليل ROE":
-        if os.path.exists("pages/roe_analysis.py"):
-            sys.path.insert(0, os.path.abspath('.'))
-            from pages.roe_analysis import main as roe_main
-            roe_main()
-        else:
-            st.error("ملف تحليل ROE غير موجود")
-    
-    elif selected_page == "الأسهم المفضلة":
-        st.info("هذه الميزة قيد التطوير")
-
+    # التحقق من وجود الملف أولاً
+    if os.path.exists("pages/us_market.py"):
+        from pages.us_market import main
+        main()
+    else:
+        st.error("ملف الصفحة الرئيسية غير موجود")
 except Exception as e:
-    st.error(f"حدث خطأ غير متوقع: {str(e)}")
-    st.write("تفاصيل الخطأ:", e)
-    
+    st.error(f"حدث خطأ: {str(e)}")
     if st.button("حاول مرة أخرى"):
         st.rerun()
-
-# تذييل الصفحة
-st.markdown("---")
-st.markdown("""
-<div style="text-align: center;">
-    <p>تم التطوير بواسطة فريق التحليل المالي</p>
-    <p>© 2023 جميع الحقوق محفوظة</p>
-</div>
-""", unsafe_allow_html=True)
