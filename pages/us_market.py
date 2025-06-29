@@ -132,11 +132,31 @@ def main():
                     df.index = pd.to_datetime(df.index)
                     df = df.astype(float)
                     
-                    st.line_chart(df["4. close"])
+                    # Create a Plotly figure for better visualization
+                    fig = go.Figure()
+                    fig.add_trace(go.Scatter(
+                        x=df.index,
+                        y=df["4. close"],
+                        mode='lines',
+                        name='سعر الإغلاق'
+                    ))
+                    fig.update_layout(
+                        title=f"سعر سهم {selected_stock} التاريخي",
+                        xaxis_title="التاريخ",
+                        yaxis_title="السعر ($)",
+                        hovermode="x unified"
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
                 else:
                     st.warning("لا توجد بيانات تاريخية متاحة")
             except Exception as e:
                 st.error(f"خطأ في جلب البيانات التاريخية: {str(e)}")
-                
-    if __name__ == "__main__":
+
+if __name__ == "__main__":
+    # Set page configuration
+    st.set_page_config(
+        page_title="لوحة تحليل السوق الأمريكي",
+        page_icon="📊",
+        layout="wide"
+    )
     main()
