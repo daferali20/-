@@ -32,14 +32,28 @@ st.sidebar.info(f"""
 """)
 
 # طريقة تشغيل الصفحة الرئيسية
-try:
-    # التحقق من وجود الملف أولاً
-    if os.path.exists("pages/us_market.py"):
-        from pages.us_market import main
-        main()
-    else:
-        st.error("ملف الصفحة الرئيسية غير موجود")
-except Exception as e:
-    st.error(f"حدث خطأ: {str(e)}")
-    if st.button("حاول مرة أخرى"):
-        st.rerun()
+def safe_main():
+    try:
+        # التحقق من وجود الملف أولاً
+        if os.path.exists("pages/us_market.py"):
+            from pages.us_market import main
+            
+            # إضافة معالجة الأخطاء للوظيفة الرئيسية
+            try:
+                main()
+            except KeyError as ke:
+                st.error(f"خطأ في بنية البيانات: {str(ke)}")
+                st.info("قد يكون هناك تغيير في هيكل البيانات الواردة من المصدر")
+            except Exception as e:
+                st.error(f"حدث خطأ غير متوقع: {str(e)}")
+        else:
+            st.error("ملف الصفحة الرئيسية غير موجود")
+    except ImportError:
+        st.error("تعذر استيراد وحدة الصفحة الرئيسية")
+    except Exception as e:
+        st.error(f"حدث خطأ: {str(e)}")
+        if st.button("حاول مرة أخرى"):
+            st.rerun()
+
+# تشغيل الوظيفة الآمنة
+safe_main()
