@@ -10,3 +10,4 @@ vaderSentiment
 textblob
 python-telegram-bot
 matplotlib
+load_dotenv
