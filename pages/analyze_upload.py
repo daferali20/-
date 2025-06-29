@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from telegram_alerts import TelegramSender
+from telegram_sender import TelegramSender
 
 st.set_page_config(page_title="📤 تحليل ملف شركات", layout="wide")
 st.title("📤 رفع ملف CSV وتحليل الشركات")
