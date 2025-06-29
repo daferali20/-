@@ -1,4 +1,4 @@
-mport streamlit as st
+import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 from datetime import datetime
@@ -73,26 +73,6 @@ def main():
                     st.write("الأعمدة المتاحة:", available_columns)
             except Exception as e:
                 st.error(f"خطأ في معالجة بيانات حالة السوق: {str(e)}")
-   #-----------------------------666666666666666666666--------------------------------------------- 
-    data = fetch_real_time_data()
-    
-    if not data:
-        st.error("❌ تعذر جلب البيانات من السوق. يرجى التحقق من اتصال الإنترنت أو مفتاح API")
-        st.stop()
-    
-    # عرض حالة السوق
-    if "market_status" in data:
-        st.header("🔄 حالة السوق الحالية")
-        market_status = data["market_status"].get("markets", [])
-        if market_status:
-            status_df = pd.DataFrame(market_status)
-            st.dataframe(status_df[["market_type", "region", "current_status", "last_updated"]]
-                        .rename(columns={
-                            "market_type": "نوع السوق",
-                            "region": "المنطقة",
-                            "current_status": "الحالة",
-                            "last_updated": "آخر تحديث"
-                        }))
     
     # عرض المؤشرات الرئيسية
     st.header("📌 المؤشرات الرئيسية")
@@ -165,11 +145,31 @@ def main():
                     df.index = pd.to_datetime(df.index)
                     df = df.astype(float)
                     
-                    st.line_chart(df["4. close"])
+                    # Create a Plotly figure for better visualization
+                    fig = go.Figure()
+                    fig.add_trace(go.Scatter(
+                        x=df.index,
+                        y=df["4. close"],
+                        mode='lines',
+                        name='سعر الإغلاق'
+                    ))
+                    fig.update_layout(
+                        title=f"سعر سهم {selected_stock} التاريخي",
+                        xaxis_title="التاريخ",
+                        yaxis_title="السعر ($)",
+                        hovermode="x unified"
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
                 else:
                     st.warning("لا توجد بيانات تاريخية متاحة")
             except Exception as e:
                 st.error(f"خطأ في جلب البيانات التاريخية: {str(e)}")
 
 if __name__ == "__main__":
+    # Set page configuration
+    st.set_page_config(
+        page_title="لوحة تحليل السوق الأمريكي",
+        page_icon="📊",
+        layout="wide"
+    )
     main()
