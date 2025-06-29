@@ -41,7 +41,7 @@ if uploaded_file is not None:
     if st.button("📨 إرسال النتائج إلى Telegram"):
         sender = TelegramSender()
         result = sender.send_message(message)
-        if result.get("ok"):
+        if result and isinstance(result, dict) and result.get("ok"):
             st.success("✅ تم إرسال الرسالة بنجاح!")
         else:
             st.error("❌ فشل في إرسال الرسالة.")
