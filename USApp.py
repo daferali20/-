@@ -30,7 +30,18 @@ st.sidebar.info(f"""
 - تحديث البيانات: كل 30 دقيقة
 - آخر تحديث: {last_update} (توقيت نيويورك)
 """)
+page = st.sidebar.radio(
+    "اختر قسم التحليل",
+    ["نظرة عامة", "عائد حقوق المساهمين"],
+    index=0
+)
 
+if page == "نظرة عامة":
+    from pages.us_market import main
+    main()
+elif page == "عائد حقوق المساهمين":
+    from pages.roe_analysis import main
+    main()
 # طريقة تشغيل الصفحة الرئيسية
 try:
     # التحقق من وجود الملف أولاً
