@@ -5,6 +5,30 @@ import requests
 from datetime import datetime
 from telegram_sender import TelegramSender
 
+def fetch_roe_for_symbols(symbols, api_key):
+    data_list = []
+    for symbol in symbols:
+        try:
+            url = f"https://www.alphavantage.co/query?function=OVERVIEW&symbol={symbol}&apikey={api_key}"
+            response = requests.get(url)
+            if response.status_code == 200:
+                json_data = response.json()
+                # تأكد أن ROE موجودة ويمكن تحويله إلى float
+                roe = float(json_data.get("ReturnOnEquityTTM", 0))
+                data_list.append({
+                    "Symbol": symbol,
+                    "Company": json_data.get("Name", "Unknown"),
+                    "ROE": roe * 100,  # تحويل من نسبة عشرية إلى %
+                    "Sector": json_data.get("Sector", "Unknown"),
+                    "MarketCap": json_data.get("MarketCapitalization", "Unknown")
+                })
+            else:
+                st.warning(f"تعذر جلب بيانات {symbol}")
+        except Exception as e:
+            st.warning(f"خطأ في جلب بيانات {symbol}: {e}")
+
+    return pd.DataFrame(data_list)
+
 def main():
     st.title("📊 تحليل الشركات حسب عائد حقوق المساهمين (ROE)")
 
@@ -25,28 +49,24 @@ def main():
         "الخدمات المالية", "السلع الاستهلاكية"
     ])
 
-    # زر البحث
-    if st.button("🔎 بحث عن الشركات"):
-        with st.spinner("جاري تحليل البيانات..."):
-            # بيانات وهمية مؤقتًا
-            sample_data = {
-                "Symbol": ["AAPL", "MSFT", "JNJ", "XOM", "JPM"],
-                "Company": ["Apple", "Microsoft", "Johnson & Johnson", "Exxon Mobil", "JPMorgan Chase"],
-                "ROE": [147.3, 43.68, 25.19, 22.11, 16.57],
-                "Sector": ["التكنولوجيا", "التكنولوجيا", "الرعاية الصحية", "الطاقة", "الخدمات المالية"],
-                "MarketCap": ["2.8T", "2.5T", "450B", "440B", "480B"]
-            }
-            df = pd.DataFrame(sample_data)
+    # قائمة الأسهم التي تريد تحليلها (يمكنك تعديلها)
+    symbols = ["AAPL", "MSFT", "JNJ", "XOM", "JPM"]
 
+    if st.button("🔎 بحث عن الشركات"):
+        with st.spinner("جاري جلب وتحليل البيانات..."):
+            df = fetch_roe_for_symbols(symbols, api_key)
+
+            # تصفية البيانات
             if sector != "الكل":
                 df = df[df["Sector"] == sector]
             df = df[df["ROE"] >= min_roe]
 
             st.session_state["search_results"] = df
 
-    # عرض النتائج إذا موجودة في session_state
+    # عرض النتائج
     if "search_results" in st.session_state:
         df = st.session_state["search_results"]
+
         if not df.empty:
             st.success(f"تم العثور على {len(df)} شركة تلبي المعايير")
             st.subheader("📋 نتائج البحث")
@@ -64,7 +84,6 @@ def main():
             fig.update_traces(texttemplate='%{text:.2f}%', textposition='outside')
             st.plotly_chart(fig, use_container_width=True)
 
-            # زر إرسال النتائج إلى Telegram
             if st.button("📩 إرسال نتائج ROE إلى التليجرام"):
                 try:
                     message = f"📊 <b>نتائج تحليل ROE</b>\n\n"
@@ -75,7 +94,7 @@ def main():
 
                     for _, row in df.iterrows():
                         message += f"🏢 <b>{row['Company']}</b> ({row['Symbol']})\n"
-                        message += f"📊 ROE: {row['ROE']}%\n"
+                        message += f"📊 ROE: {row['ROE']:.2f}%\n"
                         message += f"🏛 القطاع: {row['Sector']}\n"
                         message += f"💰 القيمة السوقية: {row['MarketCap']}\n"
                         message += "────────────────────\n"
@@ -90,7 +109,7 @@ def main():
                     else:
                         st.error("❌ فشل في إرسال الرسالة. يرجى التحقق من إعدادات Telegram.")
                 except Exception as e:
-                    st.error(f"❌ حدث خطأ أثناء الإرسال: {str(e)}")
+                    st.error(f"❌ حدث خطأ أثناء الإرسال: {e}")
 
         else:
             st.warning("⚠️ لا توجد شركات تلبي معايير البحث.")
