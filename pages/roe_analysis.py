@@ -3,7 +3,8 @@ import pandas as pd
 import plotly.express as px
 import requests
 from datetime import datetime
-from telegram_sender import send_telegram_message
+#from telegram_sender import send_telegram_message
+from telegram_sender import TelegramSender
 
 
 def main():
