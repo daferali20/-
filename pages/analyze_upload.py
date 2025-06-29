@@ -33,9 +33,18 @@ if uploaded_file is not None:
 
     # توليد الرسالة
     message = "📊 الشركات الجيدة حسب التحليل:\n\n"
+
     for _, row in filtered.head(10).iterrows():
-        message += f"🔹 {row['symbol']} - {row['companyName']} | السعر: {row['price']} | التوزيع: {row['lastAnnualDividend']}\n"
-    message += "\n📡 تم الإرسال من النظام."
+        symbol = row['symbol']
+        name = row['companyName']
+        price = row['price']
+        dividend = row['lastAnnualDividend']
+        
+        message += f"🔹 {symbol} - {name}\n"
+        message += f"     💲 السعر: {price:,.2f}\n"
+        message += f"     💰 التوزيع: {dividend:,.2f}\n\n"
+
+
 
     # إرسال إلى تيليجرام
     if st.button("📨 إرسال النتائج إلى Telegram"):
