@@ -12,8 +12,14 @@ def main():
     if "alpha_vantage" not in st.secrets:
         st.error("⚠️ إعدادات Alpha Vantage غير موجودة في secrets.toml")
         st.stop()
+    
+    if "telegram" not in st.secrets:
+        st.error("⚠️ إعدادات Telegram غير موجودة في secrets.toml")
+        st.stop()
 
     api_key = st.secrets["alpha_vantage"]["api_key"]
+    telegram_token = st.secrets["telegram"]["token"]
+    telegram_chat_id = st.secrets["telegram"]["chat_id"]
 
     @st.cache_data(ttl=86400)
     def fetch_roe_data():
@@ -75,14 +81,36 @@ def main():
 
                 # 📩 زر إرسال النتائج إلى Telegram
                 if st.button("📩 إرسال نتائج ROE إلى التليجرام"):
-                    message = "📊 <b>قائمة الشركات ذات ROE مرتفع:</b>\n"
-                    for i, row in df.iterrows():
-                        message += f"🔹 <b>{row['Company']}</b> ({row['Symbol']}) - ROE: {row['ROE']}%\n"
-                    
-                    if send_telegram_message(message):
-                        st.success("✅ تم إرسال النتائج إلى تليجرام.")
-                    else:
-                        st.error("❌ فشل في إرسال الرسالة.")
+                    try:
+                        # إنشاء رسالة مفصلة
+                        message = f"📊 <b>نتائج تحليل ROE</b>\n\n"
+                        message += f"<b>معايير البحث:</b>\n"
+                        message += f"- أدنى ROE: {min_roe}%\n"
+                        message += f"- القطاع: {sector}\n\n"
+                        message += f"<b>الشركات التي تطابق المعايير ({len(df)}):</b>\n\n"
+                        
+                        for i, row in df.iterrows():
+                            message += f"🏢 <b>{row['Company']}</b> ({row['Symbol']})\n"
+                            message += f"📊 ROE: {row['ROE']}%\n"
+                            message += f"🏛 القطاع: {row['Sector']}\n"
+                            message += f"💰 القيمة السوقية: {row['MarketCap']}\n"
+                            message += "────────────────────\n"
+                        
+                        message += f"\n🔄 آخر تحديث: {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+                        
+                        # إرسال الرسالة
+                        success = send_telegram_message(
+                            token=telegram_token,
+                            chat_id=telegram_chat_id,
+                            message=message
+                        )
+                        
+                        if success:
+                            st.success("✅ تم إرسال النتائج إلى تليجرام بنجاح!")
+                        else:
+                            st.error("❌ فشل في إرسال الرسالة. يرجى التحقق من إعدادات Telegram.")
+                    except Exception as e:
+                        st.error(f"❌ حدث خطأ أثناء الإرسال: {str(e)}")
 
             else:
                 st.warning("⚠️ لا توجد شركات تلبي معايير البحث.")
