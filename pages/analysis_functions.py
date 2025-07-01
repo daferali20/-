@@ -6,37 +6,32 @@ import cv2
 from io import BytesIO
 from PIL import Image, ImageDraw
 from datetime import datetime, timedelta
-# from tensorflow.keras.models import load_model  ← تم التعليق عليه
-# from tensorflow.keras.preprocessing import image as kimage  ← تم التعليق عليه
+from tensorflow.keras.models import load_model  ← تم التعليق عليه
+from tensorflow.keras.preprocessing import image as kimage  ← تم التعليق عليه
 
 # ↓↓↓ وظائف بديلة (أو مؤقتة) بدل نموذج التعلم العميق ↓↓↓
 
-#-def fetch_tradingview_chart(ticker, interval='1D', study_params=None):
-    #"""
-   # جلب شارت TradingView لأي سهم
-    #"""
-    #base_url = "https://www.tradingview.com/chart/"
-    #params = {
-    #    'symbol': ticker,
-    #    'interval': interval,
-    #    'studies': study_params or 'MA5,MA20,RSI14'
-   # }
-   # try:
-    #    response = requests.get(base_url, params=params, stream=True)
-    #    response.raise_for_status()
-    #    img = Image.open(BytesIO(response.content))
-    #    return img
-    #except Exception as e:
-     #   raise Exception(f"خطأ في جلب الشارت: {e}")
+def fetch_tradingview_chart(ticker, interval='1D', study_params=None):
+    """
+    جلب شارت TradingView لأي سهم
+    """
+    base_url = "https://www.tradingview.com/chart/"
+    params = {
+        'symbol': ticker,
+        'interval': interval,
+        'studies': study_params or 'MA5,MA20,RSI14'
+    }
+    try:
+        response = requests.get(base_url, params=params, stream=True)
+        response.raise_for_status()
+        img = Image.open(BytesIO(response.content))
+        return img
+    except Exception as e:
+        raise Exception(f"خطأ في جلب الشارت: {e}")
 #---------------------------------------------------------------
 #from PIL import Image, ImageDraw
 
-def fetch_tradingview_chart(ticker, timeframe="1D"):
-    # إنشاء صورة وهمية (Placeholder)
-    img = Image.new("RGB", (800, 400), color="white")
-    draw = ImageDraw.Draw(img)
-    draw.text((10, 10), f"Chart for {ticker} ({timeframe})", fill="black")
-    return img
+
 
 def preprocess_chart_image(img: Image.Image) -> np.ndarray:
     """
