@@ -143,3 +143,4 @@ def get_tiingo_data(symbol, period="1mo"):
         return pd.DataFrame()
 
 # --- جاهز لتحليل البيانات لاحقًا ---
+ 
