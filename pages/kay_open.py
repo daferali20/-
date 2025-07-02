@@ -5,110 +5,72 @@ import yfinance as yf
 from datetime import datetime, timedelta
 import time
 import numpy as np
-from alpha_vantage.timeseries import TimeSeries
-import twelvedata as td
-import cachetools
 
-# تهيئة التطبيق
+# استيراد Twelve Data مع معالجة الخطأ
+try:
+    import twelvedata as td
+    TWELVE_DATA_AVAILABLE = True
+except ImportError:
+    TWELVE_DATA_AVAILABLE = False
+    st.warning("ملاحظة: مكتبة TwelveData غير مثبتة. سيتم تعطيل خيار TwelveData.")
+
+# استيراد Alpha Vantage مع معالجة الخطأ
+try:
+    from alpha_vantage.timeseries import TimeSeries
+    ALPHA_VANTAGE_AVAILABLE = True
+except ImportError:
+    ALPHA_VANTAGE_AVAILABLE = False
+    st.warning("ملاحظة: مكتبة AlphaVantage غير مثبتة. سيتم تعطيل خيار AlphaVantage.")
+
+# إعداد واجهة المستخدم
 st.set_page_config(page_title="أداة الأسهم متعددة المصادر", layout="wide")
-st.title('📈 أداة الأسهم الأكثر ارتفاعًا (متعددة المصادر)')
+st.title('📈 أداة الأسهم الأكثر ارتفاعًا')
 
-# إعدادات التطبيق
-st.sidebar.header("إعدادات المصادر")
+# قائمة مصادر البيانات المتاحة
+available_sources = ["Yahoo Finance"]
+
+if ALPHA_VANTAGE_AVAILABLE:
+    available_sources.append("Alpha Vantage")
+if TWELVE_DATA_AVAILABLE:
+    available_sources.append("Twelve Data")
+
+# اختيار مصدر البيانات
 data_source = st.sidebar.selectbox(
     "اختر مصدر البيانات:",
-    ["Yahoo Finance", "Alpha Vantage", "Twelve Data"],
+    available_sources,
     index=0
 )
 
-# إعداد مفاتيح API
-if data_source == "Alpha Vantage":
+# إدارة مفاتيح API
+if data_source == "Alpha Vantage" and ALPHA_VANTAGE_AVAILABLE:
     av_key = st.sidebar.text_input("أدخل مفتاح Alpha Vantage API:", type="password")
-elif data_source == "Twelve Data":
+elif data_source == "Twelve Data" and TWELVE_DATA_AVAILABLE:
     td_key = st.sidebar.text_input("أدخل مفتاح Twelve Data API:", type="password")
 
-MAX_RETRIES = 3
-DELAY = 2
-cache = cachetools.TTLCache(maxsize=100, ttl=3600)
-
-# --- وظائف جلب البيانات من مصادر مختلفة ---
-@cachetools.cached(cache)
+# --- وظائف جلب البيانات ---
 def get_stock_data(symbol, period="1mo"):
     """دالة موحدة لجلب البيانات من المصدر المحدد"""
     try:
         if data_source == "Yahoo Finance":
             return get_yfinance_data(symbol, period)
-        elif data_source == "Alpha Vantage" and av_key:
-            return get_alphavantage_data(symbol, period)
-        elif data_source == "Twelve Data" and td_key:
-            return get_twelvedata_data(symbol, period)
-        else:
-            st.error("المفتاح المطلوب غير متوفر لهذا المصدر")
-            return pd.DataFrame()
+        elif data_source == "Alpha Vantage":
+            return get_alphavantage_data(symbol, period) if ALPHA_VANTAGE_AVAILABLE else pd.DataFrame()
+        elif data_source == "Twelve Data":
+            return get_twelvedata_data(symbol, period) if TWELVE_DATA_AVAILABLE else pd.DataFrame()
+        return pd.DataFrame()
     except Exception as e:
         st.error(f"خطأ في جلب البيانات: {str(e)}")
         return pd.DataFrame()
 
-def get_yfinance_data(symbol, period):
-    """جلب البيانات من Yahoo Finance"""
-    for _ in range(MAX_RETRIES):
-        try:
-            data = yf.Ticker(symbol).history(period=period)
-            time.sleep(DELAY)
-            if not data.empty:
-                return data[['Open', 'High', 'Low', 'Close', 'Volume']]
-        except:
-            time.sleep(DELAY * 2)
-    return pd.DataFrame()
-# استيراد Alpha Vantage بشكل آمن مع معالجة الخطأ
-def get_alphavantage_data(symbol, period):
-    """جلب البيانات من Alpha Vantage"""
-    try:
-        from alpha_vantage.timeseries import TimeSeries
-        ALPHA_VANTAGE_AVAILABLE = True
-    except ImportError:
-        ALPHA_VANTAGE_AVAILABLE = False
-        st.warning("لم يتم تثبيت مكتبة Alpha Vantage. بعض الميزات لن تكون متاحة.")
-    
-    # استيراد Twelve Data بشكل آمن مع معالجة الخطأ
-    try:
-        import twelvedata as td
-        TWELVE_DATA_AVAILABLE = True
-    except ImportError:
-        TWELVE_DATA_AVAILABLE = False
-        st.warning("لم يتم تثبيت مكتبة Twelve Data. بعض الميزات لن تكون متاحة.")
-   
-
-    try:
-        ts = TimeSeries(key=av_key, output_format='pandas')
-        
-        # تحديد الفترة بناءً على المدخلات
-        if "mo" in period:
-            interval = 'daily'
-            outputsize = 'compact'
-        else:
-            interval = '60min'
-            outputsize = 'compact'
-        
-        data, _ = ts.get_daily(symbol=symbol, outputsize='full')
-        data = data.sort_index()
-        data.columns = ['Open', 'High', 'Low', 'Close', 'Volume']
-        return data.last(period)
-    except Exception as e:
-        st.error(f"خطأ في Alpha Vantage: {str(e)}")
-        return pd.DataFrame()
-
 def get_twelvedata_data(symbol, period):
     """جلب البيانات من Twelve Data"""
+    if not TWELVE_DATA_AVAILABLE or not td_key:
+        st.error("Twelve Data غير متاح. الرجاء تثبيت المكتبة وإدخال المفتاح")
+        return pd.DataFrame()
+    
     try:
         client = td.Client(apikey=td_key)
-        
-        # تحويل الفترة إلى صيغة Twelve Data
-        if "mo" in period:
-            months = int(period.replace("mo", ""))
-            timeframe = "1day"
-        else:
-            timeframe = "1hour"
+        timeframe = "1day" if "mo" in period else "1hour"
         
         data = client.time_series(
             symbol=symbol,
@@ -125,6 +87,7 @@ def get_twelvedata_data(symbol, period):
         st.error(f"خطأ في Twelve Data: {str(e)}")
         return pd.DataFrame()
 
+# باقي الكود (وظائف get_yfinance_data و get_alphavantage_data وواجهة المستخدم) ...
 # --- واجهة التطبيق ---
 tab1, tab2 = st.tabs(["الأسهم الصاعدة", "تحليل مفصل"])
 
