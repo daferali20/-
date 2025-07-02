@@ -254,7 +254,38 @@ with tab2:
                     # تحليل البيانات
                     data['Daily_Return'] = data['Close'].pct_change() * 100
                     data['SMA_20'] = data['Close'].rolling(20).mean()
+                if not data.empty:
+                    # تحليل البيانات
+                    data['Daily_Return'] = data['Close'].pct_change() * 100
+                    data['SMA_20'] = data['Close'].rolling(20).mean()
                     
+                    # حسابات إضافية للتحليل
+                    data['Trend'] = np.where(data['Close'] > data['SMA_20'], 'صاعد', 'هابط')
+                    average_volume = data['Volume'].rolling(window=20).mean()
+                    data['Liquidity'] = np.where(data['Volume'] > average_volume, 'مرتفعة', 'منخفضة')
+                
+                    last_row = data.iloc[-1]
+                    trend = last_row['Trend']
+                    liquidity = last_row['Liquidity']
+                    change_pct = last_row['Daily_Return']
+                    price = last_row['Close']
+                
+                    analysis_text = f"""
+                    📊 **تحليل تلقائي للسهم `{symbol}`:**
+                
+                    - 🔹 الاتجاه العام: **{trend}**
+                    - 💧 السيولة: **{liquidity}**
+                    - 📈 آخر سعر إغلاق: **{price:.2f}**
+                    - 🔄 التغير اليومي: **{change_pct:.2f}%**
+                    - 🧠 التقييم: {'فرصة شراء' if trend == 'صاعد' and liquidity == 'مرتفعة' else 'تحت المراقبة'}
+                    """
+                    
+                    # عرض النتائج كما هي
+                    ...
+                
+                    # ثم في النهاية بعد الرسوم البيانية:
+                    st.markdown(analysis_text)
+    
                     # عرض النتائج
                     col1, col2 = st.columns(2)
                     col1.metric("آخر سعر", f"{data['Close'].iloc[-1]:.2f}")
@@ -277,7 +308,7 @@ with tab2:
                     2. التحقق من مفتاح API
                     3. تجربة مصدر بيانات مختلف
                     """)
-
+                    st.markdown(analysis_text)
 # --- تذييل الصفحة ---
 st.markdown("""
 ---
