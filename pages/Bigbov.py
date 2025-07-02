@@ -15,8 +15,8 @@ st.title('أداة تصفية الأسهم الصاعدة')
 st.sidebar.header("الإعدادات")
 
 # الحصول على مفتاح API من Finnhub (يفضل تخزينه في متغيرات البيئة)
-FINNHUB_API_KEY = st.sidebar.text_input("أدخل مفتاح Finnhub API:", type="password") or os.getenv("FINNHUB_API_KEY")
-
+#FINNHUB_API_KEY = st.sidebar.text_input("أدخل مفتاح Finnhub API:", type="password") or os.getenv("FINNHUB_API_KEY")
+FINNHUB_API_KEY = st.secrets["FINNHUB_API_KEY"]
 if not FINNHUB_API_KEY:
     st.error("الرجاء إدخال مفتاح Finnhub API لاستخدام التطبيق")
     st.stop()
