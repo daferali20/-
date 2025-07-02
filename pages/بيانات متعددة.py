@@ -39,32 +39,26 @@ class DataSources:
                 "available": False
             }
         }
-        
         self._check_available_sources()
-    
+
     def _check_available_sources(self):
-        """فحص المصادر المتاحة"""
-        # Alpha Vantage
         try:
             from alpha_vantage.timeseries import TimeSeries
             self.sources["Alpha Vantage"]["available"] = True
             self.sources["Alpha Vantage"]["module"] = TimeSeries
         except ImportError:
             pass
-        
-        # Twelve Data
+
         try:
             import twelvedata as td
             self.sources["Twelve Data"]["available"] = True
             self.sources["Twelve Data"]["module"] = td
         except ImportError:
             pass
-        
-        # Tiingo (لا يحتاج لمكتبة خاصة)
+
         self.sources["Tiingo"]["available"] = True
-    
+
     def get_available_sources(self):
-        """الحصول على قائمة المصادر المتاحة"""
         return [src for src in self.sources.values() if src["available"]]
 
 # تهيئة مصادر البيانات
@@ -72,36 +66,25 @@ data_sources = DataSources()
 
 # --- واجهة المستخدم ---
 st.sidebar.header("إعدادات المصادر")
-
-# اختيار مصدر البيانات
 available_sources = [src["name"] for src in data_sources.get_available_sources()]
-selected_source = st.sidebar.selectbox(
-    "اختر مصدر البيانات:",
-    available_sources,
-    index=0
-)
+selected_source = st.sidebar.selectbox("اختر مصدر البيانات:", available_sources, index=0)
 
-# إدخال مفاتيح API
 api_keys = {}
 for src in data_sources.get_available_sources():
     if src["requires_key"]:
-        api_keys[src["name"]] = st.sidebar.text_input(
-            f"مفتاح {src['name']} API:",
-            type="password",
-            key=f"{src['name']}_key"
-        )
+        api_keys[src["name"]] = st.sidebar.text_input(f"مفتاح {src['name']} API:", type="password", key=f"{src['name']}_key")
 
 # --- وظائف جلب البيانات ---
 def get_yfinance_data(symbol, period="1mo"):
-    """جلب البيانات من Yahoo Finance"""
     try:
         data = yf.Ticker(symbol).history(period=period)
-        time.sleep(0.5)  # تجنب حظر الطلبات
+        time.sleep(0.5)
         return data[['Open', 'High', 'Low', 'Close', 'Volume']] if not data.empty else pd.DataFrame()
     except Exception as e:
         st.error(f"خطأ في Yahoo Finance: {str(e)}")
         return pd.DataFrame()
 
+#-================================================
 def get_alphavantage_data(symbol, period="1mo"):
     """جلب البيانات من Alpha Vantage"""
     if not api_keys.get("Alpha Vantage"):
