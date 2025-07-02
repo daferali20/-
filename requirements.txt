@@ -12,3 +12,5 @@ textblob
 python-telegram-bot
 matplotlib
 load_dotenv
+alpha-vantage==2.3.1
+numpy
