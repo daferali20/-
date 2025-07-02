@@ -185,18 +185,18 @@ def get_tiingo_data(symbol, period="1mo"):
         return pd.DataFrame()
 
 # --- الواجهة الرئيسية ---
-tab1, tab2 = st.tabs(["الأسهم الصاعدة", "تحليل مفصل"])
-
-with tab1:
-    st.header("الأسهم الأكثر ارتفاعًا")
+    tab1, tab2 = st.tabs(["الأسهم الصاعدة", "تحليل مفصل"])
     
-    market = st.selectbox("اختر السوق:", ["NASDAQ", "Tadawul", "S&P 500"])
-    if st.button("جلب البيانات"):
-    with st.spinner("جاري تحليل البيانات..."):
-        # السماح للمستخدم برفع ملف يحتوي على رموز إضافية
-        uploaded_file = st.file_uploader("رفع ملف CSV أو TXT يحتوي على رموز أسهم إضافية (اختياري)", type=['csv', 'txt'])
+    with tab1:
+        st.header("الأسهم الأكثر ارتفاعًا")
         
-        if uploaded_file is not None:
+        market = st.selectbox("اختر السوق:", ["NASDAQ", "Tadawul", "S&P 500"])
+    if st.button("جلب البيانات"):
+       with st.spinner("جاري تحليل البيانات..."):
+            # السماح للمستخدم برفع ملف يحتوي على رموز إضافية
+            uploaded_file = st.file_uploader("رفع ملف CSV أو TXT يحتوي على رموز أسهم إضافية (اختياري)", type=['csv', 'txt'])
+        
+    if uploaded_file is not None:
             try:
                 # قراءة الملف المرفوع
                 if uploaded_file.name.endswith('.csv'):
@@ -210,8 +210,8 @@ with tab1:
             except Exception as e:
                 st.error(f"خطأ في قراءة الملف: {e}")
 
-        if selected_source == "Yahoo Finance":
-            if market == "NASDAQ":
+     if selected_source == "Yahoo Finance":
+     if market == "NASDAQ":
                 base_symbols = ["AAPL", "MSFT", "AMZN", "GOOG", "META", "TSLA", "NVDA"]
             elif market == "Tadawul":
                 base_symbols = ["2222.SR", "1180.SR", "7010.SR", "1211.SR", "2380.SR"]
