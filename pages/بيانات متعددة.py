@@ -185,26 +185,42 @@ def get_tiingo_data(symbol, period="1mo"):
         return pd.DataFrame()
 
 # --- الواجهة الرئيسية ---
-    tab1, tab2 = st.tabs(["الأسهم الصاعدة", "تحليل مفصل"])
+tab1, tab2 = st.tabs(["الأسهم الصاعدة", "تحليل مفصل"])
+
+with tab1:
+    st.header("الأسهم الأكثر ارتفاعًا")
     
-    with tab1:
-        st.header("الأسهم الأكثر ارتفاعًا")
-        
-        market = st.selectbox("اختر السوق:", ["NASDAQ", "Tadawul", "S&P 500"])
+    market = st.selectbox("اختر السوق:", ["NASDAQ", "Tadawul", "S&P 500"])
     
-            # دمج الرموز الأساسية مع الإضافية
-            symbols = base_symbols + (additional_symbols if 'additional_symbols' in locals() else [])
-   
+    # قسم رفع ملف الرموز الإضافية
+    uploaded_file = st.file_uploader("رفع ملف الأسهم الإضافية (اختياري)", type=['csv', 'txt'])
+    additional_symbols = []
+    
+    if uploaded_file is not None:
+        try:
+            if uploaded_file.name.endswith('.csv'):
+                df = pd.read_csv(uploaded_file)
+                additional_symbols = df.iloc[:, 0].tolist()
+            else:
+                additional_symbols = uploaded_file.getvalue().decode('utf-8').splitlines()
+            
+            st.success(f"تمت إضافة {len(additional_symbols)} رمزاً جديداً")
+        except Exception as e:
+            st.error(f"خطأ في قراءة الملف: {str(e)}")
+    
     if st.button("جلب البيانات"):
         with st.spinner("جاري تحليل البيانات..."):
             if selected_source == "Yahoo Finance":
                 if market == "NASDAQ":
-                    symbols = ["AAPL", "MSFT", "AMZN", "GOOG", "META", "TSLA", "NVDA"]
+                    base_symbols = ["AAPL", "MSFT", "AMZN", "GOOG", "META", "TSLA", "NVDA"]
                 elif market == "Tadawul":
-                    symbols = ["2222.SR", "1180.SR", "7010.SR", "1211.SR", "2380.SR"]
+                    base_symbols = ["2222.SR", "1180.SR", "7010.SR", "1211.SR", "2380.SR"]
                 else:
-                  symbols = ["SPY", "VOO", "IVV"]
-            
+                    base_symbols = ["SPY", "VOO", "IVV"]
+                
+                # دمج الرموز الأساسية مع الإضافية
+                symbols = base_symbols + additional_symbols
+                
                 results = []
                 for symbol in symbols:
                     data = get_yfinance_data(symbol)
