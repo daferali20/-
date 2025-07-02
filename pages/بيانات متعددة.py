@@ -194,7 +194,7 @@ def get_tiingo_data(symbol, period="1mo"):
     
             # دمج الرموز الأساسية مع الإضافية
             symbols = base_symbols + (additional_symbols if 'additional_symbols' in locals() else [])
-#44444444444444444444444444    
+   
     if st.button("جلب البيانات"):
         with st.spinner("جاري تحليل البيانات..."):
             if selected_source == "Yahoo Finance":
@@ -204,7 +204,7 @@ def get_tiingo_data(symbol, period="1mo"):
                     symbols = ["2222.SR", "1180.SR", "7010.SR", "1211.SR", "2380.SR"]
                 else:
                   symbols = ["SPY", "VOO", "IVV"]
-     #44444444444444444444           
+            
                 results = []
                 for symbol in symbols:
                     data = get_yfinance_data(symbol)
