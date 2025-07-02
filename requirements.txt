@@ -16,3 +16,4 @@ alpha-vantage
 twelvedata
 numpy
 pandas_ta
+talib
