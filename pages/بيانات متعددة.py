@@ -93,7 +93,7 @@ def get_alphavantage_data(symbol, period="1mo"):
         data, _ = ts.get_daily(symbol=symbol, outputsize='full')
         data = data.sort_index()
         data.columns = ['Open', 'High', 'Low', 'Close', 'Volume']
-        return data.last(period)
+        return data.tail(30)
     except Exception as e:
         st.error(f"خطأ في Alpha Vantage: {str(e)}")
         return pd.DataFrame()
@@ -108,7 +108,7 @@ def get_twelvedata_data(symbol, period="1mo"):
         data = client.time_series(symbol=symbol, interval=timeframe, outputsize=100, timezone="UTC").as_pandas()
         if not data.empty:
             data.columns = ['Open', 'High', 'Low', 'Close', 'Volume']
-            return data.last(period)
+            return data.tail(30)
         return pd.DataFrame()
     except Exception as e:
         st.error(f"خطأ في Twelve Data: {str(e)}")
