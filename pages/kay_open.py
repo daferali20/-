@@ -60,9 +60,25 @@ def get_yfinance_data(symbol, period):
         except:
             time.sleep(DELAY * 2)
     return pd.DataFrame()
-
+# استيراد Alpha Vantage بشكل آمن مع معالجة الخطأ
 def get_alphavantage_data(symbol, period):
     """جلب البيانات من Alpha Vantage"""
+    try:
+        from alpha_vantage.timeseries import TimeSeries
+        ALPHA_VANTAGE_AVAILABLE = True
+    except ImportError:
+        ALPHA_VANTAGE_AVAILABLE = False
+        st.warning("لم يتم تثبيت مكتبة Alpha Vantage. بعض الميزات لن تكون متاحة.")
+    
+    # استيراد Twelve Data بشكل آمن مع معالجة الخطأ
+    try:
+        import twelvedata as td
+        TWELVE_DATA_AVAILABLE = True
+    except ImportError:
+        TWELVE_DATA_AVAILABLE = False
+        st.warning("لم يتم تثبيت مكتبة Twelve Data. بعض الميزات لن تكون متاحة.")
+   
+
     try:
         ts = TimeSeries(key=av_key, output_format='pandas')
         
