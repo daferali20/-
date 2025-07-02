@@ -1,7 +1,8 @@
 import pandas as pd
 import pandas_ta as ta
 import numpy as np
-
+import sys
+sys.path.append('/path/to/venv/lib/python3.13/site-packages')
 # مثال على بيانات أسعار (يتم استبدالها ببيانات حية من API)
 data = pd.DataFrame({
     'close': [3300, 3310, 3320, 3330, 3340, 3350, 3360, 3355, 3345, 3335],
