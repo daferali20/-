@@ -2,12 +2,16 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import requests
-#from ta.volume import OnBalanceVolumeIndicator
+from ta.volume import OnBalanceVolumeIndicator
 from ta.momentum import RSIIndicator  # MFI مشتق من RSI مع حجم التداول
 import matplotlib.pyplot as plt
 
-#import streamlit as st
+from bs4 import BeautifulSoup
 
+url = "https://example.com/stocks"   #اكتب  لنا رباط  
+response = requests.get(url)
+soup = BeautifulSoup(response.text, 'html.parser')
+# استخراج الجداول أو البيانات المطلوبة من HTML
 st.title('أداة تصفية الأسهم الصاعدة')
 
 symbol = st.text_input("أدخل رمز السهم (مثال: AAPL):", "AAPL")
