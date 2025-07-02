@@ -11,6 +11,9 @@ from io import StringIO
 # --- إعدادات التطبيق ---
 st.set_page_config(page_title="أداة الأسهم متعددة المصادر", layout="wide")
 st.title('📈 أداة الأسهم الأكثر ارتفاعًا (متعددة المصادر)')
+st.sidebar.subheader("فلترة الأسهم حسب السعر")
+min_price = st.sidebar.number_input("السعر الأدنى", min_value=0.0, value=1.0)
+max_price = st.sidebar.number_input("السعر الأعلى", min_value=1.0, value=55.0)
 
 # --- إدارة مصادر البيانات ---
 class DataSources:
