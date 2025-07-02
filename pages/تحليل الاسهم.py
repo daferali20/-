@@ -141,6 +141,144 @@ def get_tiingo_data(symbol, period="1mo"):
     except Exception as e:
         st.error(f"خطأ في Tiingo: {str(e)}")
         return pd.DataFrame()
+ 
+    try:
+        # حساب تاريخ البداية بناءً على الفترة المطلوبة
+        end_date = datetime.now()
+        if "mo" in period:
+            months = int(period.replace("mo", ""))
+            start_date = end_date - timedelta(days=months*30)
+        else:
+            days = int(period.replace("d", ""))
+            start_date = end_date - timedelta(days=days)
+        
+        url = f"https://api.tiingo.com/tiingo/daily/{symbol}/prices?startDate={start_date.strftime('%Y-%m-%d')}&endDate={end_date.strftime('%Y-%m-%d')}&token={api_keys['Tiingo']}"
+        
+        headers = {
+            'Content-Type': 'application/json'
+        }
+        
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        
+        data = pd.read_json(StringIO(response.text))
+        if not data.empty:
+            data = data.set_index('date')
+            data.index = pd.to_datetime(data.index)
+            return data[['open', 'high', 'low', 'close', 'volume']].rename(columns={
+                'open': 'Open',
+                'high': 'High',
+                'low': 'Low',
+                'close': 'Close',
+                'volume': 'Volume'
+            })
+        return pd.DataFrame()
+    except Exception as e:
+        st.error(f"خطأ في Tiingo: {str(e)}")
+        return pd.DataFrame()
 
+# --- الواجهة الرئيسية ---
+tab1, tab2 = st.tabs(["الأسهم الصاعدة", "تحليل مفصل"])
+
+with tab1:
+    st.header("الأسهم الأكثر ارتفاعًا")
+    
+    market = st.selectbox("اختر السوق:", ["NASDAQ", "Tadawul", "S&P 500"])
+    
+    if st.button("جلب البيانات"):
+        with st.spinner("جاري تحليل البيانات..."):
+            if selected_source == "Yahoo Finance":
+                if market == "NASDAQ":
+                    symbols = ["AAPL", "MSFT", "AMZN", "GOOG", "META", "TSLA", "NVDA"]
+                elif market == "Tadawul":
+                    symbols = ["2222.SR", "1180.SR", "7010.SR", "1211.SR", "2380.SR"]
+                else:
+                    symbols = ["SPY", "VOO", "IVV"]
+                
+                results = []
+                for symbol in symbols:
+                    data = get_yfinance_data(symbol)
+                    if not data.empty and len(data) > 1:
+                        change_pct = ((data['Close'].iloc[-1] - data['Close'].iloc[-2]) / data['Close'].iloc[-2]) * 100
+                        results.append({
+                            'السهم': symbol,
+                            'السعر': data['Close'].iloc[-1],
+                            'التغير %': change_pct,
+                            'الحجم': data['Volume'].iloc[-1],
+                            'المصدر': selected_source
+                        })
+                    time.sleep(0.5)  # تجنب حظر الطلبات
+                
+                if results:
+                    df = pd.DataFrame(results).sort_values('التغير %', ascending=False)
+                    st.dataframe(
+                        df.style
+                        .highlight_max(subset=['التغير %'], color='lightgreen')
+                        .format({'السعر': "{:.2f}", 'التغير %': "{:.2f}%", 'الحجم': "{:,.0f}"}),
+                        hide_index=True,
+                        use_container_width=True
+                    )
+                else:
+                    st.warning("لا توجد بيانات متاحة. حاول تغيير مصدر البيانات.")
+            else:
+                st.warning("حاليًا، دعم الأسواق متاح فقط مع Yahoo Finance")
+
+with tab2:
+    st.header("تحليل مفصل للسهم")
+    symbol = st.text_input("ادخل رمز السهم:", "AAPL")
+    
+    if st.button("تحليل السهم"):
+        if not symbol:
+            st.warning("الرجاء إدخال رمز السهم")
+        else:
+            with st.spinner("جاري تحليل السهم..."):
+                if selected_source == "Yahoo Finance":
+                    data = get_yfinance_data(symbol, "3mo")
+                elif selected_source == "Alpha Vantage":
+                    data = get_alphavantage_data(symbol, "3mo")
+                elif selected_source == "Twelve Data":
+                    data = get_twelvedata_data(symbol, "3mo")
+                elif selected_source == "Tiingo":
+                    data = get_tiingo_data(symbol, "3mo")
+                else:
+                    data = pd.DataFrame()
+                
+                if not data.empty:
+                    # تحليل البيانات
+                    data['Daily_Return'] = data['Close'].pct_change() * 100
+                    data['SMA_20'] = data['Close'].rolling(20).mean()
+                    
+                    # عرض النتائج
+                    col1, col2 = st.columns(2)
+                    col1.metric("آخر سعر", f"{data['Close'].iloc[-1]:.2f}")
+                    col1.metric("التغير اليومي", f"{data['Daily_Return'].iloc[-1]:.2f}%")
+                    col2.metric("حجم التداول", f"{data['Volume'].iloc[-1]:,.0f}")
+                    col2.metric("المتوسط المتحرك", f"{data['SMA_20'].iloc[-1]:.2f}")
+                    
+                    # الرسوم البيانية
+                    fig1 = px.line(data, x=data.index, y=['Close', 'SMA_20'], 
+                                 title=f"أداء السهم {symbol} (مصدر: {selected_source})")
+                    st.plotly_chart(fig1, use_container_width=True)
+                    
+                    fig2 = px.bar(data, x=data.index, y='Volume',
+                                 title=f"حجم التداول لـ {symbol}")
+                    st.plotly_chart(fig2, use_container_width=True)
+                else:
+                    st.error("فشل في جلب البيانات. حاول:")
+                    st.markdown("""
+                    1. التأكد من صحة رمز السهم
+                    2. التحقق من مفتاح API
+                    3. تجربة مصدر بيانات مختلف
+                    """)
+
+# --- تذييل الصفحة ---
+st.markdown("""
+---
+**ملاحظات مهمة:**
+1. Yahoo Finance لا يحتاج لمفتاح API
+2. Tiingo وAlpha Vantage وTwelve Data تحتاج مفاتيح API صالحة
+3. بعض المصادر قد يكون لديها قيود على عدد الطلبات
+4. الأسعار قد تكون متأخرة حسب المصدر
+""")
 # --- جاهز لتحليل البيانات لاحقًا ---
  
