@@ -191,17 +191,46 @@ with tab1:
     st.header("الأسهم الأكثر ارتفاعًا")
     
     market = st.selectbox("اختر السوق:", ["NASDAQ", "Tadawul", "S&P 500"])
-    
     if st.button("جلب البيانات"):
-        with st.spinner("جاري تحليل البيانات..."):
-            if selected_source == "Yahoo Finance":
-                if market == "NASDAQ":
-                    symbols = ["AAPL", "MSFT", "AMZN", "GOOG", "META", "TSLA", "NVDA"]
-                elif market == "Tadawul":
-                    symbols = ["2222.SR", "1180.SR", "7010.SR", "1211.SR", "2380.SR"]
-                else:
-                    symbols = ["SPY", "VOO", "IVV"]
+    with st.spinner("جاري تحليل البيانات..."):
+        # السماح للمستخدم برفع ملف يحتوي على رموز إضافية
+        uploaded_file = st.file_uploader("رفع ملف CSV أو TXT يحتوي على رموز أسهم إضافية (اختياري)", type=['csv', 'txt'])
+        
+        if uploaded_file is not None:
+            try:
+                # قراءة الملف المرفوع
+                if uploaded_file.name.endswith('.csv'):
+                    additional_symbols = pd.read_csv(uploaded_file).iloc[:, 0].tolist()
+                else:  # ملف txt
+                    additional_symbols = uploaded_file.getvalue().decode().splitlines()
                 
+                # إضافة الرموز الجديدة إلى القائمة
+                symbols += additional_symbols
+                st.success(f"تمت إضافة {len(additional_symbols)} رمزاً جديداً")
+            except Exception as e:
+                st.error(f"خطأ في قراءة الملف: {e}")
+
+        if selected_source == "Yahoo Finance":
+            if market == "NASDAQ":
+                base_symbols = ["AAPL", "MSFT", "AMZN", "GOOG", "META", "TSLA", "NVDA"]
+            elif market == "Tadawul":
+                base_symbols = ["2222.SR", "1180.SR", "7010.SR", "1211.SR", "2380.SR"]
+            else:
+                base_symbols = ["SPY", "VOO", "IVV"]
+            
+            # دمج الرموز الأساسية مع الإضافية
+            symbols = base_symbols + (additional_symbols if 'additional_symbols' in locals() else [])
+#44444444444444444444444444    
+  #  if st.button("جلب البيانات"):
+  #      with st.spinner("جاري تحليل البيانات..."):
+  #          if selected_source == "Yahoo Finance":
+   #             if market == "NASDAQ":
+   #                 symbols = ["AAPL", "MSFT", "AMZN", "GOOG", "META", "TSLA", "NVDA"]
+   #             elif market == "Tadawul":
+   #                 symbols = ["2222.SR", "1180.SR", "7010.SR", "1211.SR", "2380.SR"]
+   #             else:
+   #                symbols = ["SPY", "VOO", "IVV"]
+     #44444444444444444444           
                 results = []
                 for symbol in symbols:
                     data = get_yfinance_data(symbol)
