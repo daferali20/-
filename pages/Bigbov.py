@@ -6,6 +6,18 @@ from ta.volume import OnBalanceVolumeIndicator
 from ta.momentum import RSIIndicator  # MFI مشتق من RSI مع حجم التداول
 import matplotlib.pyplot as plt
 
+#import streamlit as st
+
+st.title('أداة تصفية الأسهم الصاعدة')
+
+symbol = st.text_input("أدخل رمز السهم (مثال: AAPL):", "AAPL")
+data = yf.download(symbol, period="1mo", interval="1d")
+
+if not data.empty:
+    # ... (نفس خطوات حساب المؤشرات)
+    st.write("الأسهم المصفاة بناءً على المعايير:")
+    st.dataframe(filtered_stocks)
+    st.line_chart(data['Close'])
 plt.figure(figsize=(12, 6))
 plt.plot(stock_data['Close'], label='السعر')
 plt.scatter(filtered_stocks.index, filtered_stocks['Close'], color='green', label='إشارات شراء')
