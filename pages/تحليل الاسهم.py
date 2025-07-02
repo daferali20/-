@@ -28,7 +28,98 @@ def get_most_active_stocks():
     except Exception as e:
         st.error(f"خطأ في جلب قائمة الأسهم: {str(e)}")
         return pd.DataFrame()
+# --- وظائف جلب البيانات ---
+def get_yfinance_data(symbol, period="1mo"):
+    """جلب البيانات من Yahoo Finance"""
+    try:
+        data = yf.Ticker(symbol).history(period=period)
+        time.sleep(0.5)  # تجنب حظر الطلبات
+        return data[['Open', 'High', 'Low', 'Close', 'Volume']] if not data.empty else pd.DataFrame()
+    except Exception as e:
+        st.error(f"خطأ في Yahoo Finance: {str(e)}")
+        return pd.DataFrame()
 
+def get_alphavantage_data(symbol, period="1mo"):
+    """جلب البيانات من Alpha Vantage"""
+    if not api_keys.get("Alpha Vantage"):
+        st.error("الرجاء إدخال مفتاح Alpha Vantage API")
+        return pd.DataFrame()
+    
+    try:
+        ts = data_sources.sources["Alpha Vantage"]["module"](key=api_keys["Alpha Vantage"], output_format='pandas')
+        data, _ = ts.get_daily(symbol=symbol, outputsize='full')
+        data = data.sort_index()
+        data.columns = ['Open', 'High', 'Low', 'Close', 'Volume']
+        return data.last(period)
+    except Exception as e:
+        st.error(f"خطأ في Alpha Vantage: {str(e)}")
+        return pd.DataFrame()
+
+def get_twelvedata_data(symbol, period="1mo"):
+    """جلب البيانات من Twelve Data"""
+    if not api_keys.get("Twelve Data"):
+        st.error("الرجاء إدخال مفتاح Twelve Data API")
+        return pd.DataFrame()
+    
+    try:
+        client = data_sources.sources["Twelve Data"]["module"].Client(apikey=api_keys["Twelve Data"])
+        timeframe = "1day" if "mo" in period else "1hour"
+        
+        data = client.time_series(
+            symbol=symbol,
+            interval=timeframe,
+            outputsize=100,
+            timezone="UTC"
+        ).as_pandas()
+        
+        if not data.empty:
+            data.columns = ['Open', 'High', 'Low', 'Close', 'Volume']
+            return data.last(period)
+        return pd.DataFrame()
+    except Exception as e:
+        st.error(f"خطأ في Twelve Data: {str(e)}")
+        return pd.DataFrame()
+
+def get_tiingo_data(symbol, period="1mo"):
+    """جلب البيانات من Tiingo"""
+    if not api_keys.get("Tiingo"):
+        st.error("الرجاء إدخال مفتاح Tiingo API")
+        return pd.DataFrame()
+    
+    try:
+        # حساب تاريخ البداية بناءً على الفترة المطلوبة
+        end_date = datetime.now()
+        if "mo" in period:
+            months = int(period.replace("mo", ""))
+            start_date = end_date - timedelta(days=months*30)
+        else:
+            days = int(period.replace("d", ""))
+            start_date = end_date - timedelta(days=days)
+        
+        url = f"https://api.tiingo.com/tiingo/daily/{symbol}/prices?startDate={start_date.strftime('%Y-%m-%d')}&endDate={end_date.strftime('%Y-%m-%d')}&token={api_keys['Tiingo']}"
+        
+        headers = {
+            'Content-Type': 'application/json'
+        }
+        
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        
+        data = pd.read_json(StringIO(response.text))
+        if not data.empty:
+            data = data.set_index('date')
+            data.index = pd.to_datetime(data.index)
+            return data[['open', 'high', 'low', 'close', 'volume']].rename(columns={
+                'open': 'Open',
+                'high': 'High',
+                'low': 'Low',
+                'close': 'Close',
+                'volume': 'Volume'
+            })
+        return pd.DataFrame()
+    except Exception as e:
+        st.error(f"خطأ في Tiingo: {str(e)}")
+        return pd.DataFrame()
 # --- تبويب الأسهم الصاعدة ---
 st.header("📊 الأسهم الأكثر ارتفاعًا")
 if st.button("🔍 تحليل الأسهم"):
