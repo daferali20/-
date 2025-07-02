@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import requests
-from ta.volume import OnBalanceVolumeIndicator
+#from ta.volume import OnBalanceVolumeIndicator
 from ta.momentum import RSIIndicator  # MFI مشتق من RSI مع حجم التداول
 import matplotlib.pyplot as plt
 
