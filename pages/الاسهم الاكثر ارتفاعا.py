@@ -56,8 +56,8 @@ load_custom_css()
 class Config:
     def __init__(self):
         self.API_KEY = os.getenv("API_KEY", "CVROqS2TTsTM06ZNpYQJd5C1dXg1Amuv")
-        self.TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-        self.TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+       # self.TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+       # self.TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
         
         # التحقق من المفاتيح
         if not self.API_KEY:
